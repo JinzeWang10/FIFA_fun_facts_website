@@ -1,0 +1,145 @@
+SHOW DATABASES;
+
+CREATE DATABASE FIFA;
+
+USE FIFA;
+
+CREATE TABLE Coaches
+(
+    coach_id         varchar(255),
+    coach_url        varchar(255),
+    short_name       varchar(50),
+    long_name        varchar(255),
+    dob              DATE,
+    nationality_id   varchar(10),
+    nationality_name varchar(30),
+    face_url         varchar(255),
+    PRIMARY KEY (coach_id)
+);
+
+SELECT * FROM Coaches;
+
+CREATE TABLE Players(player_id varchar(255),
+player_url VARCHAR(255),
+fifa_version INT,
+fifa_update INT,
+fifa_update_date DATE,
+short_name VARCHAR(50),
+long_name VARCHAR(255),
+player_positions VARCHAR(255),
+overall INT,
+potential INT,
+value_eur INT,
+wage_eur INT,
+age INT,
+dob DATE,
+height_cm INT,
+weight_kg INT,
+league_id VARCHAR(10),
+league_name VARCHAR(255),
+league_level INTEGER,
+club_team_id VARCHAR(255),
+club_name VARCHAR(255),
+club_position VARCHAR(255),
+club_jersey_number INT,
+club_loaned_from VARCHAR(255),
+club_joined_date DATE,
+club_contract_valid_until_year INT,
+nationality_id VARCHAR(10),
+nationality_name VARCHAR(30),
+nation_team_id VARCHAR(10),
+nation_position VARCHAR(20),
+nation_jersey_number INT,
+preferred_foot VARCHAR(10),
+weak_foot INT,
+skill_moves INT,
+international_reputation INT,
+work_rate VARCHAR(50),
+body_type VARCHAR(50),
+real_face VARCHAR(10),
+release_clause_eur INT,
+player_tags VARCHAR(50),
+player_traits VARCHAR(50),
+pace INT,
+shooting INT,
+passing INT,
+dribbling INT,
+defending INT,
+physic INT,
+PRIMARY KEY (player_id,fifa_version)
+);
+
+LOAD DATA LOCAL INFILE '/Users/liuziye/Desktop/Upenn/CIS5500/project/male_players_less.csv' INTO TABLE Players
+FIELDS TERMINATED BY ','
+LINES TERMINATED BY '\n';
+
+# LOAD DATA LOCAL INFILE '/Users/liuziye/Desktop/Upenn/CIS5500/project/temp_test.csv' INTO TABLE Players FIELDS TERMINATED BY ',';
+
+SELECT * FROM Players;
+
+
+# SELECT *
+# FROM Players
+# WHERE player_id='176680';
+
+# ALTER TABLE Players ADD CONSTRAINT player_primary_key PRIMARY KEY (player_id,fifa_update);
+
+# DROP TABLE Players;
+
+CREATE TABLE Team(team_id varchar(255),
+team_url VARCHAR(255),
+fifa_version INT,
+fifa_update INT,
+fifa_update_date DATE,
+team_name VARCHAR(255),
+league_id VARCHAR(10),
+league_name VARCHAR(255),
+league_level INTEGER,
+nationality_id varchar(10),
+nationality_name VARCHAR(30),
+overall INTEGER,
+attack INTEGER,
+midfield INTEGER,
+defence INTEGER,
+coach_id VARCHAR(255),
+home_stadium VARCHAR(50),
+rival_team VARCHAR(10),
+international_prestige INTEGER,
+domestic_prestige INTEGER,
+transfer_budget_eur INTEGER,
+club_worth_eur INTEGER,
+starting_xi_average_age FLOAT,
+whole_team_average_age FLOAT,
+captain VARCHAR(255),
+short_free_kick VARCHAR(255),
+long_free_kick VARCHAR(255),
+left_short_free_kick VARCHAR(255),
+right_short_free_kick VARCHAR(255),
+penalties VARCHAR(255),
+left_corner VARCHAR(255),
+right_corner VARCHAR(255),
+def_team_width INTEGER,
+def_team_depth INTEGER,
+build_up_play_speed INTEGER,
+build_up_play_dribbling INTEGER,
+build_up_play_passing INTEGER,
+build_up_play_positioning INTEGER,
+chance_creation_passing INTEGER,
+chance_creation_crossing INTEGER,
+chance_creation_shooting INTEGER,
+chance_creation_positioning INTEGER,
+PRIMARY KEY (team_id,fifa_version,fifa_update),
+FOREIGN KEY (coach_id) REFERENCES Coaches(coach_id),
+FOREIGN KEY (captain,fifa_version) REFERENCES Players(player_id,fifa_version),
+FOREIGN KEY (short_free_kick,fifa_version) REFERENCES Players(player_id,fifa_version),
+FOREIGN KEY (long_free_kick,fifa_version) REFERENCES Players(player_id,fifa_version),
+FOREIGN KEY (left_short_free_kick,fifa_version) REFERENCES Players(player_id,fifa_version),
+FOREIGN KEY (right_short_free_kick,fifa_version) REFERENCES Players(player_id,fifa_version),
+FOREIGN KEY (penalties,fifa_version) REFERENCES Players(player_id,fifa_version),
+FOREIGN KEY (left_corner,fifa_version) REFERENCES Players(player_id,fifa_version),
+FOREIGN KEY (right_corner,fifa_version) REFERENCES Players(player_id,fifa_version)
+);
+
+LOAD DATA LOCAL INFILE '/Users/liuziye/Desktop/Upenn/CIS5500/project/male_teams.csv' INTO TABLE Team FIELDS TERMINATED BY ',' IGNORE 1 LINES;
+
+SELECT * FROM Team;
