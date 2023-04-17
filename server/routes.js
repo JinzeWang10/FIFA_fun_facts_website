@@ -17,41 +17,18 @@ connection.connect((err) => err && console.log(err));
  * WARM UP ROUTES *
  ******************/
 
-// Route 1: GET /author/:type
-const author = async function(req, res) {
-  // TODO (TASK 1): replace the values of name and pennKey with your own
-  const name = 'Jinze Wang';
-  const pennKey = 'wangjz';
+// Route 1: GET /league_wage problem?!
+const league_wage = async function(req, res) {
 
-  // checks the value of type the request parameters
-  // note that parameters are required and are specified in server.js in the endpoint by a colon (e.g. /author/:type)
-  if (req.params.type === 'name') {
-    // res.send returns data back to the requester via an HTTP response
-    res.send(`Created by ${name}`);
-  } else if (req.params.type === 'pennkey') {
-    res.send(`Created by ${pennKey}`);
-    // TODO (TASK 2): edit the else if condition to check if the request parameter is 'pennkey' and if so, send back response 'Created by [pennkey]'
-  } else {
-    // we can also send back an HTTP status code to indicate an improper request
-    res.status(400).send(`'${req.params.type}' is not a valid author type. Valid types are 'name' and 'pennkey'.`);
-  }
-}
-
-// Route 2: GET /random
-const random = async function(req, res) {
-  // you can use a ternary operator to check the value of request query values
-  // which can be particularly useful for setting the default value of queries
-  // note if users do not provide a value for the query it will be undefined, which is falsey
-  const explicit = req.query.explicit === 'true' ? 1 : 0;
-
-  // Here is a complete example of how to query the database in JavaScript.
-  // Only a small change (unrelated to querying) is required for TASK 3 in this route.
   connection.query(`
-    SELECT *
-    FROM Songs
-    WHERE explicit <= ${explicit}
-    ORDER BY RAND()
-    LIMIT 1
+      with avg_pay as (SELECT FLOOR(league_id) as club_league_id,AVG(wage_eur) as avg_wage FROM Players
+      where league_id != 78 
+      GROUP BY club_league_id
+      ORDER BY avg_wage DESC
+      )
+      SELECT DISTINCT t.league_name as League, a.avg_wage as "Average_Wage" from avg_pay a
+      join Team t on t.league_id = a.club_league_id
+      ORDER BY a.avg_wage DESC;
   `, (err, data) => {
     if (err || data.length === 0) {
       // if there is an error for some reason, or if the query is empty (this should not be possible)
@@ -63,65 +40,138 @@ const random = async function(req, res) {
       // being song_id and title which you will add. In this case, there is only one song
       // so we just directly access the first element of the query results array (data)
       // TODO (TASK 3): also return the song title in the response
-      res.json({
-        song_id: data[0].song_id,
-        title:data[0].title
-      });
+      // console.log(Object.keys(data[0]));
+      // res.json({
+      //   league: data[0].League,
+      //   average_wage:data[0].Average_Wage
+      // });
+      res.json({data});
     }
   });
 }
 
-/********************************
- * BASIC SONG/ALBUM INFO ROUTES *
- ********************************/
-
-// Route 3: GET /song/:song_id
-const song = async function(req, res) {
-  // TODO (TASK 4): implement a route that given a song_id, returns all information about the song
-  // Most of the code is already written for you, you just need to fill in the query
-  const song_id = req.params.song_id;
-  console.log(song_id)
+// Route 3: GET /club_wise   problem?!
+const club_wise = async function(req, res) {
   connection.query(`
-    SELECT *
-    FROM Songs
-    WHERE song_id = '${song_id}'
+    with avg_pay as (SELECT FLOOR(club_team_id) as club_team_id,AVG(wage_eur) as avg_wage, avg(overall) as avg_overall FROM Players
+    where league_id != 78
+    GROUP BY club_team_id
+    
+    
+    ORDER BY avg_wage DESC),
+    
+    
+    range_skill as (select club_team_id, '75+' as skill_value, avg_wage from avg_pay
+    where avg_overall>=75)
+    
+    
+    SELECT t.team_name as Team, t.league_name as League, avg_wage as 'Average_Wage' from range_skill a
+    join Team t on t.team_id = a.club_team_id
+    ORDER BY a.avg_wage ASC;
   `, (err, data) => {
     if (err || data.length === 0) {
       console.log(err);
       res.json({});
     } else {
-      res.json(data[0]);
+      res.json({data});
     }
   });
 }
 
-// Route 4: GET /album/:album_id
-const album = async function(req, res) {
+
+// Route 7: GET /worst_team
+const worst_team = async function(req, res) {
+  connection.query(`
+  WITH American_Coach AS
+  (
+  SELECT coach_id,short_name FROM Coaches
+  WHERE nationality_name='United States'
+  ),
+  American_Player AS
+  (
+  SELECT player_id, short_name FROM Players
+  WHERE nationality_name='United States'
+  ),
+  Team_Simpler AS
+  (
+  SELECT team_id,team_name,fifa_version,coach_id,captain,penalties,overall
+  FROM Team
+  GROUP BY fifa_version,team_id
+  ),
+  Team_with_US_Coach AS
+  (
+  SELECT T.team_id,T.team_name,T.fifa_version,AC.short_name as coach_name,T.captain,T.penalties,T.overall FROM Team_Simpler T
+  JOIN American_Coach AC
+  ON AC.coach_id=T.coach_id
+  ),
+  Team_US AS
+  (
+  SELECT T.team_id,T.team_name,T.fifa_version,T.coach_name,T.captain,T.penalties,T.overall FROM Team_with_US_Coach T
+  JOIN American_Player AP
+  ON AP.player_id=T.captain
+  UNION
+  SELECT T.team_id,T.team_name,T.fifa_version,T.coach_name,T.captain,T.penalties,T.overall FROM Team_with_US_Coach T
+  JOIN American_Player AP
+  ON AP.player_id=T.penalties
+  ),
+  Min_overall_year AS
+  (
+  SELECT fifa_version,MIN(overall) as min_overall
+  FROM Team_US
+  GROUP BY fifa_version
+  ORDER BY fifa_version
+  ),
+  Team_overall AS
+  (
+  SELECT TU.team_name,TU.fifa_version,TU.overall,MOY.min_overall as lowest_overall FROM Team_US TU
+  LEFT JOIN Min_overall_year MOY
+  ON MOY.fifa_version=TU.fifa_version
+  )
+  SELECT team_name,COUNT(fifa_version) AS No_lowest_overall FROM Team_overall
+  WHERE overall=lowest_overall
+  GROUP BY team_name
+  LIMIT 1
+  `, (err, data) => {
+    if (err || data.length === 0) {
+      console.log(err);
+      res.json({});
+    } else {
+      res.json(data);
+    }
+  });
+}
+
+// Route 11: GET /best_N_players
+const best_N_players = async function(req, res) {
   // TODO (TASK 5): implement a route that given a album_id, returns all information about the album
-  const album_id = req.params.album_id;
+  const N = req.query.N ?? 10;
+  const version = req.query.version ?? 23;
   connection.query(`
-    SELECT *
-    FROM Albums
-    WHERE album_id = '${album_id}'
+    Select long_name, club_name, fifa_version, overall from Players
+    where fifa_version = ${version}
+    order by fifa_version desc, overall desc
+    limit ${N}
+    ;  
   `, (err, data) => {
     if (err || data.length === 0) {
       console.log(err);
       res.json({});
     } else {
-      res.json(data[0]);
+      res.json(data);
     }
   });
-  // res.json({}); // replace this with your implementation
 }
 
-// Route 5: GET /albums
-const albums = async function(req, res) {
+
+
+// Route 5: GET /player_coach
+const player_coach = async function(req, res) {
   // TODO (TASK 6): implement a route that returns all albums ordered by release date (descending)
   // Note that in this case you will need to return multiple albums, so you will need to return an array of objects
   connection.query(`
-    SELECT *
-    FROM Albums
-    ORDER BY release_date DESC
+  Select distinct p.long_name as Name, p.club_name as 'Club Played', t.team_name as 'Club/Country Coaching' from Players p join Coaches c on c.long_name=p.long_name and c.dob = p.dob
+  join Team t on t.coach_id = c.coach_id
+  order by p.long_name;
   `, (err, data) => {
     if (err || data.length === 0) {
       console.log(err);
@@ -200,71 +250,128 @@ const top_songs = async function(req, res) {
   }
 }
 
-// Route 8: GET /top_albums
-const top_albums = async function(req, res) {
+// Route 11: GET /best11/:formation
+const best11 = async function(req, res) {
   // TODO (TASK 11): return the top albums ordered by aggregate number of plays of all songs on the album (descending), with optional pagination (as in route 7)
   // Hint: you will need to use a JOIN and aggregation to get the total plays of songs in an album
-  const page = req.query.page;
+  // const formation = req.params.formation ?? '433';
   // TODO (TASK 8): use the ternary (or nullish) operator to set the pageSize based on the query or default to 10
-  const pageSize = req.query.page_size ?? 10;
-  const offset=pageSize*(page-1)
+  // const pageSize = req.query.page_size ?? 10;
+  // const offset=pageSize*(page-1)
 
-  if (!page) {
-    connection.query(`
-      SELECT a.album_id, a.title, SUM(s.plays) as plays 
-      FROM Songs s JOIN Albums a on s.album_id = a.album_id
-      GROUP BY a.album_id, a.title
-      ORDER BY SUM(s.plays) DESC 
-    `, (err, data) => {
-      if (err || data.length === 0) {
-        console.log(err);
-        res.json([]);
-      } else {
-        res.json(data);
-      }
-    });
-  } else {
-    connection.query(`
-      SELECT a.album_id, a.title, SUM(s.plays) as plays 
-      FROM Songs s JOIN Albums a on s.album_id = a.album_id
-      GROUP BY a.album_id, a.title
-      ORDER BY SUM(s.plays) DESC 
-      LIMIT ${pageSize} OFFSET ${offset}
-    `, (err, data) => {
-      if (err || data.length === 0) {
-        console.log(err);
-        res.json([]);
-      } else {
-        res.json(data);
-      }
-    });
-  }
+
+  connection.query(`
+  with cm as(
+    select * from Players
+    where player_positions LIKE '%CM%'
+    order by overall desc
+    limit 2
+       ),
+    cf as(
+    select * from Players
+    where player_positions LIKE '%CF%' or player_positions LIKE '%ST%'
+    order by overall desc
+    limit 1
+       ),
+    rm as(
+    select * from Players
+    where player_positions LIKE '%RM%'
+    order by overall desc
+    limit 1
+       ),
+    
+    
+    lm as (
+    select * from Players
+    where player_positions LIKE '%LM%'
+    order by overall desc
+    limit 1
+       ),
+    gk as(
+    select * from Players
+    where player_positions LIKE '%GK%'
+    order by overall desc
+    limit 1
+       ),
+    cb as(
+    select * from Players
+    where player_positions LIKE '%CB%'
+    order by overall desc
+    limit 2
+       ),
+    rb as(
+    select * from Players
+    where player_positions LIKE '%RB%'
+    order by overall desc
+    limit 1
+       ),
+    lb as(
+    select * from Players
+    where player_positions LIKE '%LB%'
+    order by overall desc
+    limit 1
+       ),
+    cdm as(
+    select * from Players
+    where player_positions LIKE '%CDM%' OR player_positions LIKE '%CAM%'
+    order by overall desc
+    limit 1
+       )
+    
+    
+    select long_name as Name, 'CM' as Position from cm
+    union
+    select long_name as Name, 'CF' as Position from cf
+    union
+    select long_name as Name, 'GK' as Position from gk
+    union
+    select long_name as Name, 'CB' as Position from cb
+    union
+    select long_name as Name, 'RB' as Position from rb
+    union
+    select long_name as Name, 'LB' as Position from lb
+    union
+    select long_name as Name, 'CDM' as Position from cdm
+    union
+    select long_name as Name, 'RM' as Position from rm
+    union
+    select long_name as Name, 'LM' as Position from lm;
+  `, (err, data) => {
+    if (err || data.length === 0) {
+      console.log(err);
+      res.json([]);
+    } else {
+      res.json(data);
+    }
+  });
+
 }
 
-// Route 9: GET /search_albums
-const search_songs = async function(req, res) {
+// Route 9: GET /search_players
+const search_players = async function(req, res) {
   // TODO (TASK 12): return all songs that match the given search query with parameters defaulted to those specified in API spec ordered by title (ascending)
   // Some default parameters have been provided for you, but you will need to fill in the rest
-  const title = req.query.title ?? '';
-  const durationLow = req.query.duration_low ?? 60;
-  const durationHigh = req.query.duration_high ?? 660;
-  const plays_low = req.query.plays_low ?? 0;
-  const plays_high = req.query.plays_high ?? 1100000000;
-  const danceability_low = req.query.danceability_low ?? 0;
-  const danceability_high = req.query.danceability_high ?? 1;
-  const energy_low = req.query.energy_low ?? 0;
-  const energy_high = req.query.energy_high ?? 1;
-  const valence_low = req.query.valence_low ?? 0;
-  const valence_high = req.query.valence_high ?? 1;
-  const explicit = req.query.explicit === 'true' ? 1 : 0;
+  const position = req.query.position ?? 'LB';
+  const nationality = req.query.nationality ?? 'England';
+  const pace_low = req.query.pace_low ?? 50;
+  const pace_high = req.query.pace_high ?? 99;
+  const dribbling_low = req.query.dribbling_low ?? 50;
+  const dribbling_high = req.query.dribbling_high ?? 99;
+  const shooting_low = req.query.shooting_low ?? 50;
+  const shooting_high = req.query.shooting_high ?? 99;
+  const passing_low = req.query.passing_low ?? 50;
+  const passing_high = req.query.passing_high ?? 99;
+  const defending_low = req.query.defending_low ?? 50;
+  const defending_high = req.query.defending_high ?? 99;
 
-  console.log(title)
+  // console.log(title)
   connection.query(`
-    SELECT *
-    FROM Songs 
-    WHERE title like '%${title}%' and (duration between ${durationLow} and ${durationHigh}) and (plays between ${plays_low} and ${plays_high}) and (danceability between ${danceability_low} and ${danceability_high})
-          and (energy between ${energy_low} and ${energy_high}) and (valence between ${valence_low} and ${valence_high}) and explicit<=${explicit}
-    ORDER BY title
+    select * from Players where player_positions like '%${position}%'
+    and nationality_name = '${nationality}' and pace between ${pace_low} and ${pace_high} and
+    dribbling between ${dribbling_low} and ${dribbling_high} and
+    shooting between ${shooting_low} and ${shooting_high} and
+    passing between ${passing_low} and ${passing_high} and
+    defending between ${defending_low} and ${defending_high};
   `, (err, data) => {
     if (err || data.length === 0) {
       console.log(err);
@@ -277,13 +384,18 @@ const search_songs = async function(req, res) {
 }
 
 module.exports = {
-  author,
-  random,
-  song,
-  album,
-  albums,
-  album_songs,
-  top_songs,
-  top_albums,
-  search_songs,
+  league_wage,
+  club_wise,
+  player_coach,
+  worst_team,
+  search_players,
+  best_N_players,
+  best11,
+  // song,
+  // album,
+  // albums,
+  // album_songs,
+  // top_songs,
+  // top_albums,
+  // search_songs,
 }
