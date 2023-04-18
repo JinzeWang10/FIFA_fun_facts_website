@@ -6,43 +6,43 @@ import SongCard from '../components/SongCard';
 import { formatDuration } from '../helpers/formatter';
 const config = require('../config.json');
 
-export default function SongsPage() {
+export default function PlayersPage() {
   const [pageSize, setPageSize] = useState(10);
   const [data, setData] = useState([]);
-  const [selectedSongId, setSelectedSongId] = useState(null);
+  const [selectedplayerId, setSelectedplayerId] = useState(null);
 
-  const [title, setTitle] = useState('');
-  const [duration, setDuration] = useState([60, 660]);
-  const [plays, setPlays] = useState([0, 1100000000]);
-  const [danceability, setDanceability] = useState([0, 1]);
-  const [energy, setEnergy] = useState([0, 1]);
-  const [valence, setValence] = useState([0, 1]);
-  const [explicit, setExplicit] = useState(false);
+  const [position, setposition] = useState('');
+  const [defending, setdefending] = useState([60, 660]);
+  const [dribbling, setdribbling] = useState([0, 1100000000]);
+  const [pace, setPace] = useState([30, 99]);
+  const [shooting, setshooting] = useState([0, 1]);
+  const [passing, setpassing] = useState([0, 1]);
+  const [nationality_name, setnationality_name] = useState('');
 
   useEffect(() => {
-    fetch(`http://${config.server_host}:${config.server_port}/search_songs`)
+    fetch(`http://${config.server_host}:${config.server_port}/search_players`)
       .then(res => res.json())
       .then(resJson => {
-        const songsWithId = resJson.map((song) => ({ id: song.song_id, ...song }));
-        setData(songsWithId);
+        const playersWithId = resJson.map((player) => ({ id: player.long_name, ...player }));
+        setData(playersWithId);
       });
   }, []);
 
   const search = () => {
-    fetch(`http://${config.server_host}:${config.server_port}/search_songs?title=${title}` +
-      `&duration_low=${duration[0]}&duration_high=${duration[1]}` +
-      `&plays_low=${plays[0]}&plays_high=${plays[1]}` +
-      `&danceability_low=${danceability[0]}&danceability_high=${danceability[1]}` +
-      `&energy_low=${energy[0]}&energy_high=${energy[1]}` +
-      `&valence_low=${valence[0]}&valence_high=${valence[1]}` +
-      `&explicit=${explicit}`
+    fetch(`http://${config.server_host}:${config.server_port}/search_players?position=${position}` +
+      `&defending_low=${defending[0]}&defending_high=${defending[1]}` +
+      `&dribbling_low=${dribbling[0]}&dribbling_high=${dribbling[1]}` +
+      `&pace_low=${pace[0]}&pace_high=${pace[1]}` +
+      `&shooting_low=${shooting[0]}&shooting_high=${shooting[1]}` +
+      `&passing_low=${passing[0]}&passing_high=${passing[1]}` +
+      `&nationality=${nationality_name}`
     )
       .then(res => res.json())
       .then(resJson => {
         // DataGrid expects an array of objects with a unique id.
         // To accomplish this, we use a map with spread syntax (https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Spread_syntax)
-        const songsWithId = resJson.map((song) => ({ id: song.song_id, ...song }));
-        setData(songsWithId);
+        const playersWithId = resJson.map((player) => ({ id: player.player_id, ...player }));
+        setData(playersWithId);
       });
   }
 
@@ -51,17 +51,18 @@ export default function SongsPage() {
   // LazyTable component. The big difference is we provide all data to the DataGrid component
   // instead of loading only the data we need (which is necessary in order to be able to sort by column)
   const columns = [
-    { field: 'title', headerName: 'Title', width: 300, renderCell: (params) => (
-        <Link onClick={() => setSelectedSongId(params.row.song_id)}>{params.value}</Link>
+    { field: 'long_name', headerName: 'Name', width: 200, renderCell: (params) => (
+        <Link onClick={() => setSelectedplayerId(params.row.player_id)}>{params.value}</Link>
     ) },
-    { field: 'duration', headerName: 'Duration' },
-    { field: 'plays', headerName: 'Plays' },
-    { field: 'danceability', headerName: 'Danceability' },
-    { field: 'energy', headerName: 'Energy' },
-    { field: 'valence', headerName: 'Valence' },
-    { field: 'tempo', headerName: 'Tempo' },
-    { field: 'key_mode', headerName: 'Key' },
-    { field: 'explicit', headerName: 'Explicit' },
+    // { field: 'position', headerName: 'Position' },
+    { field: 'nationality_name', headerName: 'Nationality' },
+    { field: 'defending', headerName: 'Defending' },
+    { field: 'dribbling', headerName: 'Dribbling' },
+    { field: 'pace', headerName: 'Pace' },
+    { field: 'shooting', headerName: 'Shooting' },
+    { field: 'passing', headerName: 'Passing' },
+    { field: 'overall', headerName: 'Overall' },
+
   ]
 
   // This component makes uses of the Grid component from MUI (https://mui.com/material-ui/react-grid/).
@@ -73,74 +74,70 @@ export default function SongsPage() {
   // will automatically lay out all the grid items into rows based on their xs values.
   return (
     <Container>
-      {selectedSongId && <SongCard songId={selectedSongId} handleClose={() => setSelectedSongId(null)} />}
-      <h2>Search Songs</h2>
+      {selectedplayerId && <playerCard playerId={selectedplayerId} handleClose={() => setSelectedplayerId(null)} />}
+      <h2>Search Players</h2>
       <Grid container spacing={6}>
-        <Grid item xs={8}>
-          <TextField label='Title' value={title} onChange={(e) => setTitle(e.target.value)} style={{ width: "100%" }}/>
+        <Grid item xs={6}>
+          <TextField label='Position' value={position} onChange={(e) => setposition(e.target.value)} style={{ width: "100%" }}/>
+        </Grid>
+        <Grid item xs={6}>
+          <TextField label='Nationality' value={nationality_name} onChange={(e) => setnationality_name(e.target.value)} style={{ width: "100%" }}/>
         </Grid>
         <Grid item xs={4}>
-          <FormControlLabel
-            label='Explicit'
-            control={<Checkbox checked={explicit} onChange={(e) => setExplicit(e.target.checked)} />}
-          />
-        </Grid>
-        <Grid item xs={6}>
-          <p>Duration</p>
+          <p>defending</p>
           <Slider
-            value={duration}
-            min={60}
-            max={660}
-            step={10}
-            onChange={(e, newValue) => setDuration(newValue)}
+            value={defending}
+            min={30}
+            max={99}
+            step={1}
+            onChange={(e, newValue) => setdefending(newValue)}
             valueLabelDisplay='auto'
-            valueLabelFormat={value => <div>{formatDuration(value)}</div>}
           />
         </Grid>
-        <Grid item xs={6}>
-          <p>Plays (millions)</p>
+        <Grid item xs={4}>
+          <p>dribbling</p>
           <Slider
-            value={plays}
-            min={0}
-            max={1100000000}
-            step={10000000}
-            onChange={(e, newValue) => setPlays(newValue)}
+            value={dribbling}
+            min={30}
+            max={99}
+            step={1}
+            onChange={(e, newValue) => setdribbling(newValue)}
             valueLabelDisplay='auto'
-            valueLabelFormat={value => <div>{value / 1000000}</div>}
+            
           />
         </Grid>
-        {/* TODO (TASK 24): add sliders for danceability, energy, and valence (they should be all in the same row of the Grid) */}
+        {/* TODO (TASK 24): add sliders for danceability, energy, and passing (they should be all in the same row of the Grid) */}
         {/* Hint: consider what value xs should be to make them fit on the same row. Set max, min, and a reasonable step. Is valueLabelFormat is necessary? */}
         <Grid item xs={4}>
-          <p>Danceability</p>
+          <p>pace</p>
           <Slider
-            value={danceability}
-            min={0}
-            max={1}
-            step={0.01}
-            onChange={(e, newValue) => setDanceability(newValue)}
+            value={pace}
+            min={30}
+            max={99}
+            step={1}
+            onChange={(e, newValue) => setPace(newValue)}
             valueLabelDisplay='auto'
           />
         </Grid>
         <Grid item xs={4}>
-          <p>Energy</p>
+          <p>shooting</p>
           <Slider
-            value={energy}
-            min={0}
-            max={1}
-            step={0.01}
-            onChange={(e, newValue) => setEnergy(newValue)}
+            value={shooting}
+            min={30}
+            max={99}
+            step={1}
+            onChange={(e, newValue) => setshooting(newValue)}
             valueLabelDisplay='auto'
           />
         </Grid>
         <Grid item xs={4}>
-          <p>Valence</p>
+          <p>passing</p>
           <Slider
-            value={valence}
-            min={0}
-            max={1}
-            step={0.01}
-            onChange={(e, newValue) => setValence(newValue)}
+            value={passing}
+            min={30}
+            max={99}
+            step={1}
+            onChange={(e, newValue) => setpassing(newValue)}
             valueLabelDisplay='auto'
           />
         </Grid>

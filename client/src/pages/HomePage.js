@@ -41,18 +41,30 @@ export default function HomePage() {
   // and an optional renderCell property which given a row returns a custom JSX element to display in the cell.
   const songColumns = [
     {
-      field: 'title',
-      headerName: 'Song Title',
-      renderCell: (row) => <Link onClick={() => setSelectedSongId(row.song_id)}>{row.title}</Link> // A Link component is used just for formatting purposes
+      field: 'long_name',
+      headerName: 'Name',
+      renderCell: (row) => <Link onClick={() => setSelectedSongId(row.player_id)}>{row.long_name}</Link> // A Link component is used just for formatting purposes
+    },
+    // {
+    //   field: 'album',
+    //   headerName: 'Album',
+    //   renderCell: (row) => <NavLink to={`/albums/${row.album_id}`}>{row.album}</NavLink> // A NavLink component is used to create a link to the album page
+    // },
+    {
+      field: 'player_positions',
+      headerName: 'Positions'
     },
     {
-      field: 'album',
-      headerName: 'Album',
-      renderCell: (row) => <NavLink to={`/albums/${row.album_id}`}>{row.album}</NavLink> // A NavLink component is used to create a link to the album page
+      field: 'overall',
+      headerName: 'Overall'
     },
     {
-      field: 'plays',
-      headerName: 'Plays'
+      field: 'age',
+      headerName: 'Age'
+    },
+    {
+      field: 'club_name',
+      headerName: 'Club'
     },
   ];
 
@@ -79,8 +91,8 @@ export default function HomePage() {
         <Link onClick={() => setSelectedSongId(songOfTheDay.song_id)}>{songOfTheDay.title}</Link>
       </h2>
       <Divider />
-      <h2>Top Songs</h2>
-      <LazyTable route={`http://${config.server_host}:${config.server_port}/top_songs`} columns={songColumns} />
+      <h2>Top Players</h2>
+      <LazyTable route={`http://${config.server_host}:${config.server_port}/top_players`} columns={songColumns} />
       <Divider />
 
       <h2>Top Albums</h2>
