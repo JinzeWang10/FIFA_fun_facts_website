@@ -13,6 +13,7 @@ const NavText = ({ href, text, isMain }) => {
         fontFamily: 'monospace',
         fontWeight: 700,
         letterSpacing: '.3rem',
+        color: 'inherit',
       }}
     >
       <NavLink
@@ -36,9 +37,10 @@ export default function NavBar() {
     <AppBar position='static'>
       <Container maxWidth='xl'>
         <Toolbar disableGutters>
-          <NavText href='/' text='SWIFTIFY' isMain />
-          <NavText href='/albums' text='ALBUMS' />
-          <NavText href='/songs' text='SONGS' />
+          <NavText href='/' text='Soccer World' isMain />
+          <NavText href='/clubs' text='CLUBS' />
+          <NavText href='/player_search' text='PLAYERS' />
+          <NavText href='/best11' text='BEST 11' />
         </Toolbar>
       </Container>
     </AppBar>
