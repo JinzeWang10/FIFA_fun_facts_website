@@ -1,4 +1,4 @@
-const exp = require('constants');
+// const exp = require('constants');
 const mysql = require('mysql')
 const config = require('./config.json')
 
@@ -36,19 +36,35 @@ const league_wage = async function(req, res) {
       console.log(err);
       res.json({});
     } else {
-      // Here, we return results of the query as an object, keeping only relevant data
-      // being song_id and title which you will add. In this case, there is only one song
-      // so we just directly access the first element of the query results array (data)
-      // TODO (TASK 3): also return the song title in the response
-      // console.log(Object.keys(data[0]));
-      // res.json({
-      //   league: data[0].League,
-      //   average_wage:data[0].Average_Wage
-      // });
-      res.json({data});
+      res.json(data);
     }
   });
 }
+
+// Route 2: GET /club_wage problem?!
+
+const club_wage = async function(req, res) {
+
+  connection.query(`with avg_pay as (SELECT FLOOR(club_team_id) as club_team_id,AVG(wage_eur)
+  as avg_wage FROM Players
+  where league_id != 78
+  GROUP BY club_team_id
+  ORDER BY avg_wage DESC)
+  SELECT distinct t.team_name as Team, t.league_name as League, a.avg_wage as
+  "Average Wage" from avg_pay a
+  join Team t on t.team_id = a.club_team_id
+  ORDER BY a.avg_wage DESC;`, (err, data) => {
+  if (err || data.length === 0) {
+    // if there is an error for some reason, or if the query is empty (this should not be possible)
+    // print the error message and return an empty object instead
+    console.log(err);
+    res.json({});
+  } else {
+    res.json({data});
+  }
+});
+}
+
 
 // Route 3: GET /club_wise   problem?!
 const club_wise = async function(req, res) {
@@ -78,6 +94,100 @@ const club_wise = async function(req, res) {
   });
 }
 
+
+// Route 4: GET /prime_age/:N
+
+const prime_age = async function(req, res) {
+  // TODO (TASK 4): implement a route that given number N, returns the top N prime ages of the soccer players based on the wages paid.
+  const N = req.params.N;
+  connection.query(`
+  with prime_age as (SELECT age,AVG(wage_eur) as avg
+  FROM Players
+  GROUP BY age
+  ORDER BY avg DESC
+  LIMIT ${N})
+  Select age as 'Prime Ages' from prime_age order by age;
+  `, (err, data) => {
+    if (err || data.length === 0) {
+      console.log(err);
+      res.json({});
+    } else {
+      res.json(data);
+    }
+  });
+}
+
+
+// Route 5: GET /player_coach
+const player_coach = async function(req, res) {
+  // TODO (TASK 6): implement a route that returns all albums ordered by release date (descending)
+  // Note that in this case you will need to return multiple albums, so you will need to return an array of objects
+  connection.query(`
+  Select distinct p.long_name as Name, p.club_name as 'Club Played', t.team_name as 'Club/Country Coaching' from Players p join Coaches c on c.long_name=p.long_name and c.dob = p.dob
+  join Team t on t.coach_id = c.coach_id
+  order by p.long_name;
+  `, (err, data) => {
+    if (err || data.length === 0) {
+      console.log(err);
+      res.json({});
+    } else {
+      res.json(data);
+    }
+  });
+  // res.json([]); // replace this with your implementation
+}
+
+
+
+// Route 6: GET  /performance_measure/:position
+const performance_measure = async function(req, res) {
+  // TODO (TASK 7): implement a route that given an album_id, returns all songs on that album ordered by track number (ascending)
+  const position = req.params.position;
+  connection.query(`
+  SELECT 'dribbling' AS performance_measure,
+  ABS(AVG(dribbling) - AVG(overall)) AS difference
+  FROM Players
+  WHERE player_positions like '%${position}%' 
+  UNION ALL
+  SELECT
+  'passing' AS performance_measure,
+  ABS(AVG(passing) - AVG(overall)) AS difference
+  FROM Players
+  WHERE player_positions like '%${position}%'
+  UNION ALL
+  SELECT
+  'pace' AS performance_measure,
+  ABS(AVG(pace) - AVG(overall)) AS difference
+  FROM Players
+  WHERE player_positions like '%${position}%'
+  UNION ALL
+  SELECT
+  'shooting' AS performance_measure,
+  ABS(AVG(shooting) - AVG(overall)) AS difference
+  FROM Players
+  WHERE player_positions like '%${position}%'
+  UNION ALL
+  SELECT
+  'defending' AS performance_measure,
+  ABS(AVG(defending) - AVG(overall)) AS difference
+  FROM Players
+  WHERE player_positions like '%${position}%'
+  UNION ALL
+  SELECT
+  'physic' AS performance_measure,
+  ABS(AVG(physic) - AVG(overall)) AS difference
+  FROM Players
+  WHERE player_positions like '%${position}%'
+  ORDER BY difference ASC;
+  `, (err, data) => {
+    if (err || data.length === 0) {
+      console.log(err);
+      res.json({});
+    } else {
+      res.json(data);
+    }
+  });
+}
 
 // Route 7: GET /worst_team
 const worst_team = async function(req, res) {
@@ -141,6 +251,217 @@ const worst_team = async function(req, res) {
   });
 }
 
+
+// Route 8: GET /new_good_players
+const new_good_players = async function(req, res) {
+  // TODO (TASK 5): implement a route that given a album_id, returns all information about the album
+  
+  connection.query(`
+  WITH Player_2020 AS
+  (
+  SELECT player_id,club_team_id,fifa_version,overall
+  FROM Players
+  WHERE fifa_version='20'
+  ),
+  Player_2021 AS
+  (
+  SELECT player_id,club_team_id,fifa_version,overall
+  FROM Players
+  WHERE fifa_version='21'
+  ),
+  Player_2022 AS
+  (
+  SELECT player_id,club_team_id,fifa_version,overall
+  FROM Players
+  WHERE fifa_version='22'
+  ),
+  Club_newPlayer AS
+  (
+  SELECT club_team_id,player_id,fifa_version,overall FROM Player_2021
+  WHERE player_id not in (SELECT player_id FROM Player_2020)
+  UNION
+  SELECT club_team_id,player_id,fifa_version,overall FROM Player_2022
+  WHERE player_id not in (SELECT player_id FROM Player_2021)
+  ),
+  Club_overall AS
+  (
+  SELECT
+  Cn.club_team_id,T.team_name,Cn.player_id,Cn.fifa_version,Cn.overall as
+  player_overall, T.overall as team_overall FROM Club_newPlayer Cn
+  LEFT JOIN Team T ON T.team_id=Cn.club_team_id
+  )
+  SELECT team_name,COUNT(player_id) as good_player_num FROM Club_overall
+  WHERE player_overall>team_overall
+    ;  
+  `, (err, data) => {
+    if (err || data.length === 0) {
+      console.log(err);
+      res.json({});
+    } else {
+      res.json(data);
+    }
+  });
+}
+
+
+// Route 10: GET /spidar_chart
+
+const spidar_chart = async function(req, res) {
+  // TODO (TASK 5): implement a route that given a album_id, returns all information about the album
+  const version = req.query.version ?? 23;
+  connection.query(`
+  with team_temp as (
+    select distinct team_id, team_url, fifa_version, team_name, league_id,
+    league_name, league_level, nationality_id, nationality_name, overall,
+    attack, midfield, defence, coach_id, home_stadium, rival_team,
+    international_prestige, domestic_prestige, transfer_budget_eur,
+    club_worth_eur,
+    starting_xi_average_age,
+    whole_team_average_age,
+    captain,
+    short_free_kick,
+    long_free_kick,
+    left_short_free_kick,
+    right_short_free_kick,
+    penalties,
+    left_corner,
+    right_corner,
+    def_team_width,
+    def_team_depth,
+    build_up_play_speed,
+    build_up_play_dribbling,
+    build_up_play_passing,
+    build_up_play_positioning,
+    chance_creation_passing,
+    chance_creation_crossing,
+    chance_creation_shooting,
+    chance_creation_positioning from Team
+    where team_url like '%01' and fifa_version = ${version}),
+    attacking as (
+    SELECT
+    p.team_id,
+    p.fifa_version,
+    p.team_name,
+    p.attack,
+    100 - ((SELECT COUNT(*) FROM team_temp WHERE attack >= p.attack) /
+    (SELECT COUNT(*) FROM team_temp)) * 100 AS percentile_attacking
+    FROM
+    team_temp p
+    ORDER BY
+    p.attack DESC),
+    defending as (
+    SELECT
+    p.team_id,
+    p.fifa_version,
+    p.team_name,
+    p.defence,
+    100 - ((SELECT COUNT(*) FROM team_temp WHERE defence >= p.defence) /
+    (SELECT COUNT(*) FROM team_temp)) * 100 AS percentile_defending
+    FROM
+    team_temp p
+    ORDER BY
+    p.defence DESC),
+    midfielding as (
+    SELECT
+    p.team_id,
+    p.fifa_version,
+    p.team_name,
+    p.midfield,
+    100 - ((SELECT COUNT(*) FROM team_temp WHERE midfield >= p.midfield) /
+    (SELECT COUNT(*) FROM team_temp)) * 100 AS percentile_midfield
+    FROM
+    team_temp p
+    ORDER BY
+    p.midfield DESC),
+    budget as (
+    SELECT
+    p.team_id,
+    p.fifa_version,
+    p.team_name,
+    p.transfer_budget_eur,
+    100 - ((SELECT COUNT(*) FROM team_temp WHERE transfer_budget_eur >=
+    p.transfer_budget_eur) / (SELECT COUNT(*) FROM team_temp)) * 100 AS
+    percentile_budget
+    FROM
+    team_temp p
+    ORDER BY
+    p.transfer_budget_eur DESC),
+    overa as (
+    SELECT
+    p.team_id,
+    p.fifa_version,
+    p.team_name,
+    p.overall,
+    100 - ((SELECT COUNT(*) FROM team_temp WHERE overall >= p.overall) /
+    (SELECT COUNT(*) FROM team_temp)) * 100 AS percentile_overall
+    FROM
+    team_temp p
+    ORDER BY
+    p.overall DESC),
+    level as (
+    SELECT
+    p.team_id,
+    p.fifa_version,
+    p.team_name,
+    p.league_level,
+    100 - ((SELECT COUNT(*) FROM team_temp WHERE league_level >=
+    p.league_level) / (SELECT COUNT(*) FROM team_temp)) * 100 AS
+    percentile_level
+    FROM
+    team_temp p
+    ORDER BY
+    p.league_level DESC),
+    domestic as (
+    SELECT
+    p.team_id,
+    p.fifa_version,
+    p.team_name,
+    p.domestic_prestige,
+    100 - ((SELECT COUNT(*) FROM team_temp WHERE domestic_prestige >=
+    p.domestic_prestige) / (SELECT COUNT(*) FROM team_temp)) * 100 AS
+    percentile_domestic
+    FROM
+    team_temp p
+    ORDER BY
+    p.domestic_prestige DESC),
+    inter as (
+    SELECT
+    p.team_id,
+    p.fifa_version,
+    p.team_name,
+    p.international_prestige,
+    100 - ((SELECT COUNT(*) FROM team_temp WHERE international_prestige >=
+    p.international_prestige) / (SELECT COUNT(*) FROM team_temp)) * 100 AS
+    percentile_inter
+    FROM
+    team_temp p
+    ORDER BY
+    p.international_prestige DESC)
+    Select a.team_id, a.fifa_version, a.team_name, percentile_overall,
+    percentile_attacking, percentile_defending, percentile_midfield,
+    percentile_inter, percentile_domestic, percentile_budget,
+    percentile_level
+    from attacking a
+    join defending d on a.team_id = d.team_id
+    join midfielding m on m.team_id = d.team_id
+    join overa o on o.team_id = m.team_id
+    join budget b on b.team_id = o.team_id
+    join domestic do on do.team_id = b.team_id
+    join inter i on i.team_id = do.team_id
+    join level l on l.team_id = i.team_id
+    order by a.team_name;
+    ;  
+  `, (err, data) => {
+    if (err || data.length === 0) {
+      console.log(err);
+      res.json({});
+    } else {
+      res.json(data);
+    }
+  });
+}
+
+
 // Route 11: GET /best_N_players
 const best_N_players = async function(req, res) {
   // TODO (TASK 5): implement a route that given a album_id, returns all information about the album
@@ -162,95 +483,98 @@ const best_N_players = async function(req, res) {
   });
 }
 
-
-
-// Route 5: GET /player_coach
-const player_coach = async function(req, res) {
-  // TODO (TASK 6): implement a route that returns all albums ordered by release date (descending)
-  // Note that in this case you will need to return multiple albums, so you will need to return an array of objects
-  connection.query(`
-  Select distinct p.long_name as Name, p.club_name as 'Club Played', t.team_name as 'Club/Country Coaching' from Players p join Coaches c on c.long_name=p.long_name and c.dob = p.dob
-  join Team t on t.coach_id = c.coach_id
-  order by p.long_name;
-  `, (err, data) => {
-    if (err || data.length === 0) {
-      console.log(err);
-      res.json({});
-    } else {
-      res.json(data);
-    }
-  });
-  // res.json([]); // replace this with your implementation
-}
-
-// Route 6: GET /album_songs/:album_id
-const album_songs = async function(req, res) {
-  // TODO (TASK 7): implement a route that given an album_id, returns all songs on that album ordered by track number (ascending)
-  const album_id = req.params.album_id;
-  connection.query(`
-    SELECT song_id, title, number, duration, plays
-    FROM Songs
-    WHERE album_id = '${album_id}'
-    ORDER BY number 
-  `, (err, data) => {
-    if (err || data.length === 0) {
-      console.log(err);
-      res.json({});
-    } else {
-      res.json(data);
-    }
-  });
-}
-
-/************************
- * ADVANCED INFO ROUTES *
- ************************/
-
-// Route 7: GET /top_players
-const top_players = async function(req, res) {
-  const page = req.query.page;
-  // TODO (TASK 8): use the ternary (or nullish) operator to set the pageSize based on the query or default to 10
-  const pageSize = req.query.page_size ?? 5;
-  const offset=pageSize*(page-1);
-  // console.log(page);
-  // console.log(pageSize);
-  // console.log(offset);
-
-  if (!page) {
-    connection.query(`
-      SELECT player_id, long_name, player_positions, overall, age, club_name
-      FROM Players
-      where fifa_version=23
-      ORDER BY overall DESC 
-    `, (err, data) => {
-      if (err || data.length === 0) {
-        console.log(err);
-        res.json({});
-      } else {
-        res.json(data);
-      }
-    });
+//Route 12: GET /best_N_clubs
+const best_N_clubs = async function(req, res) {
+const N = req.query.N ?? 10;
+// const version = req.query.version ?? 23;
+connection.query(`
+Select * from Team where league_id != 78 order by overall DESC
+limit ${N}
+  ;  
+`, (err, data) => {
+  if (err || data.length === 0) {
+    console.log(err);
+    res.json({});
   } else {
-    // TODO (TASK 10): reimplement TASK 9 with pagination
-    // Hint: use LIMIT and OFFSET (see https://www.w3schools.com/php/php_mysql_select_limit.asp)
-    connection.query(`
-      SELECT long_name, player_positions, overall, age, club_name
-      FROM Players
-      where fifa_version=23
-      ORDER BY overall DESC 
-      LIMIT ${pageSize} OFFSET ${offset};
-    `, (err, data) => {
-      if (err || data.length === 0) {
-        console.log(err);
-        res.json([]);
-      } else {
-        res.json(data);
-      }
-    });
+    res.json(data);
   }
+});
 }
 
-// Route 11: GET /best11/:formation
+
+
+
+
+
+
+
+//Route 14 GET /search_playerid/:player_id
+const search_playerid = async function(req, res) {
+  const player_id = req.params.player_id;
+  // const version = req.query.version ?? 23;
+  connection.query(`
+  select short_name, fifa_version, pace, passing, dribbling, shooting, defending, 
+  physic from Players 
+  where player_id = ${player_id};  
+  `, (err, data) => {
+    if (err || data.length === 0) {
+      console.log(err);
+      res.json({});
+    } else {
+      res.json(data);
+    }
+  });
+  }
+
+// /************************
+//  * ADVANCED INFO ROUTES *
+//  ************************/
+
+// // Route 7: GET /top_songs
+// const top_songs = async function(req, res) {
+//   const page = req.query.page;
+//   // TODO (TASK 8): use the ternary (or nullish) operator to set the pageSize based on the query or default to 10
+//   const pageSize = req.query.page_size ?? 10;
+//   const offset=pageSize*(page-1);
+//   // console.log(page);
+//   // console.log(pageSize);
+//   // console.log(offset);
+
+//   if (!page) {
+//     // TODO (TASK 9)): query the database and return all songs ordered by number of plays (descending)
+//     // Hint: you will need to use a JOIN to get the album title as well
+//     connection.query(`
+//       SELECT s.song_id, s.title, s.album_id, a.title as album, s.plays
+//       FROM Songs s JOIN Albums a on s.album_id = a.album_id
+//       ORDER BY plays DESC 
+//     `, (err, data) => {
+//       if (err || data.length === 0) {
+//         console.log(err);
+//         res.json({});
+//       } else {
+//         res.json(data);
+//       }
+//     });
+//   } else {
+//     // TODO (TASK 10): reimplement TASK 9 with pagination
+//     // Hint: use LIMIT and OFFSET (see https://www.w3schools.com/php/php_mysql_select_limit.asp)
+//     connection.query(`
+//       SELECT s.song_id, s.title, s.album_id, a.title as album, s.plays
+//       FROM Songs s JOIN Albums a on s.album_id = a.album_id
+//       ORDER BY plays DESC 
+//       LIMIT ${pageSize} OFFSET ${offset};
+//     `, (err, data) => {
+//       if (err || data.length === 0) {
+//         console.log(err);
+//         res.json([]);
+//       } else {
+//         res.json(data);
+//       }
+//     });
+//   }
+// }
+
+// Route 13: GET /best11/:formation
 const best11 = async function(req, res) {
   // TODO (TASK 11): return the top albums ordered by aggregate number of plays of all songs on the album (descending), with optional pagination (as in route 7)
   // Hint: you will need to use a JOIN and aggregation to get the total plays of songs in an album
@@ -351,19 +675,19 @@ const best11 = async function(req, res) {
 const search_players = async function(req, res) {
   // TODO (TASK 12): return all songs that match the given search query with parameters defaulted to those specified in API spec ordered by title (ascending)
   // Some default parameters have been provided for you, but you will need to fill in the rest
-  const position = req.query.position ?? 'ST';
+  const position = req.query.position ?? 'LB';
   const nationality = req.query.nationality ?? 'England';
-  const pace_low = req.query.pace_low ?? 30;
+  const pace_low = req.query.pace_low ?? 50;
   const pace_high = req.query.pace_high ?? 99;
-  const dribbling_low = req.query.dribbling_low ?? 30;
+  const dribbling_low = req.query.dribbling_low ?? 50;
   const dribbling_high = req.query.dribbling_high ?? 99;
-  const shooting_low = req.query.shooting_low ?? 30;
+  const shooting_low = req.query.shooting_low ?? 50;
   const shooting_high = req.query.shooting_high ?? 99;
-  const passing_low = req.query.passing_low ?? 30;
+  const passing_low = req.query.passing_low ?? 50;
   const passing_high = req.query.passing_high ?? 99;
-  const defending_low = req.query.defending_low ?? 30;
+  const defending_low = req.query.defending_low ?? 50;
   const defending_high = req.query.defending_high ?? 99;
-  const version = req.query.version ?? 23;
+
   // console.log(title)
   connection.query(`
     select * from Players where player_positions like '%${position}%'
@@ -371,9 +695,7 @@ const search_players = async function(req, res) {
     dribbling between ${dribbling_low} and ${dribbling_high} and
     shooting between ${shooting_low} and ${shooting_high} and
     passing between ${passing_low} and ${passing_high} and
-    defending between ${defending_low} and ${defending_high} and
-    fifa_version = ${version}
-    order by overall desc;
+    defending between ${defending_low} and ${defending_high};
   `, (err, data) => {
     if (err || data.length === 0) {
       console.log(err);
@@ -387,17 +709,24 @@ const search_players = async function(req, res) {
 
 module.exports = {
   league_wage,
+  club_wage,
   club_wise,
+  prime_age,
   player_coach,
+  performance_measure,
   worst_team,
+  spidar_chart,
+  new_good_players,
   search_players,
   best_N_players,
+  best_N_clubs,
   best11,
   // song,
   // album,
   // albums,
   // album_songs,
-  top_players,
+  // top_songs,
   // top_albums,
   // search_songs,
+  search_playerid
 }
