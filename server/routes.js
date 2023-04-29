@@ -461,6 +461,48 @@ const spidar_chart = async function(req, res) {
   });
 }
 
+const top_players = async function(req, res) {
+  const page = req.query.page;
+  // TODO (TASK 8): use the ternary (or nullish) operator to set the pageSize based on the query or default to 10
+  const pageSize = req.query.page_size ?? 5;
+  const offset=pageSize*(page-1);
+  // console.log(page);
+  // console.log(pageSize);
+  // console.log(offset);
+
+  if (!page) {
+    connection.query(`
+      SELECT player_id, long_name, player_positions, overall, age, club_name
+      FROM Players
+      where fifa_version=23
+      ORDER BY overall DESC 
+    `, (err, data) => {
+      if (err || data.length === 0) {
+        console.log(err);
+        res.json({});
+      } else {
+        res.json(data);
+      }
+    });
+  } else {
+    // TODO (TASK 10): reimplement TASK 9 with pagination
+    // Hint: use LIMIT and OFFSET (see https://www.w3schools.com/php/php_mysql_select_limit.asp)
+    connection.query(`
+      SELECT long_name, player_positions, overall, age, club_name
+      FROM Players
+      where fifa_version=23
+      ORDER BY overall DESC 
+      LIMIT ${pageSize} OFFSET ${offset};
+    `, (err, data) => {
+      if (err || data.length === 0) {
+        console.log(err);
+        res.json([]);
+      } else {
+        res.json(data);
+      }
+    });
+  }
+}
 
 // Route 11: GET /best_N_players
 const best_N_players = async function(req, res) {
@@ -675,27 +717,30 @@ const best11 = async function(req, res) {
 const search_players = async function(req, res) {
   // TODO (TASK 12): return all songs that match the given search query with parameters defaulted to those specified in API spec ordered by title (ascending)
   // Some default parameters have been provided for you, but you will need to fill in the rest
-  const position = req.query.position ?? 'LB';
+  const position = req.query.position ?? 'ST';
   const nationality = req.query.nationality ?? 'England';
-  const pace_low = req.query.pace_low ?? 50;
+  const pace_low = req.query.pace_low ?? 30;
   const pace_high = req.query.pace_high ?? 99;
-  const dribbling_low = req.query.dribbling_low ?? 50;
+  const dribbling_low = req.query.dribbling_low ?? 30;
   const dribbling_high = req.query.dribbling_high ?? 99;
-  const shooting_low = req.query.shooting_low ?? 50;
+  const shooting_low = req.query.shooting_low ?? 30;
   const shooting_high = req.query.shooting_high ?? 99;
-  const passing_low = req.query.passing_low ?? 50;
+  const passing_low = req.query.passing_low ?? 30;
   const passing_high = req.query.passing_high ?? 99;
-  const defending_low = req.query.defending_low ?? 50;
+  const defending_low = req.query.defending_low ?? 30;
   const defending_high = req.query.defending_high ?? 99;
+  const version = req.query.version ?? 23;
 
-  // console.log(title)
+  // console.log(position)
   connection.query(`
     select * from Players where player_positions like '%${position}%'
     and nationality_name = '${nationality}' and pace between ${pace_low} and ${pace_high} and
     dribbling between ${dribbling_low} and ${dribbling_high} and
     shooting between ${shooting_low} and ${shooting_high} and
     passing between ${passing_low} and ${passing_high} and
-    defending between ${defending_low} and ${defending_high};
+    defending between ${defending_low} and ${defending_high} and
+    fifa_version = ${version}
+    order by overall desc;
   `, (err, data) => {
     if (err || data.length === 0) {
       console.log(err);
@@ -704,6 +749,7 @@ const search_players = async function(req, res) {
       res.json(data);
     }
   });
+  
 
 }
 
@@ -721,6 +767,7 @@ module.exports = {
   best_N_players,
   best_N_clubs,
   best11,
+  top_players,
   // song,
   // album,
   // albums,

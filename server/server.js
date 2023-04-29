@@ -17,7 +17,7 @@ app.get('/prime_age/:N', routes.prime_age);
 app.get('/performance_measure/:position', routes.performance_measure)
 app.get('/worst_team', routes.worst_team);
 app.get('/new_good_players', routes.new_good_players);
-
+app.get('/top_players', routes.top_players);
 app.get('/best_N_players', routes.best_N_players);
 app.get('/best11/', routes.best11);
 app.get('/player_coach', routes.player_coach);
