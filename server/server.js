@@ -25,6 +25,7 @@ app.get('/best_N_players', routes.best_N_players);
 app.get('/best_N_clubs', routes.best_N_clubs);
 app.get('/search_players', routes.search_players);
 app.get('/search_playerid/:player_id', routes.search_playerid);
+app.get('/funfacts', routes.funfacts);
 
 app.listen(config.server_port, () => {
   console.log(`Server running at http://${config.server_host}:${config.server_port}/`)

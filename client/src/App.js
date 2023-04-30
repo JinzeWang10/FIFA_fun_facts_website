@@ -9,6 +9,7 @@ import AlbumsPage from './pages/AlbumsPage';
 import SongsPage from './pages/SongsPage';
 import AlbumInfoPage from './pages/AlbumInfoPage'
 import PlayersPage from "./pages/SongsPage";
+import FunFactPage from "./pages/FunFactPage";
 
 // createTheme enables you to customize the look and feel of your app past the default
 // in this case, we only change the color scheme
@@ -34,6 +35,7 @@ export default function App() {
           <Route path="/clubs" element={<AlbumsPage />} />
           <Route path="/albums/:album_id" element={<AlbumInfoPage />} />
           <Route path="/player_search" element={<PlayersPage />} />
+          <Route path="/fun_facts" element={<FunFactPage />} />
         </Routes>
       </BrowserRouter>
     </ThemeProvider>

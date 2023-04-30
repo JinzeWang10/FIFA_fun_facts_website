@@ -41,6 +41,7 @@ export default function NavBar() {
           <NavText href='/clubs' text='CLUBS' />
           <NavText href='/player_search' text='PLAYERS' />
           <NavText href='/best11' text='BEST 11' />
+          <NavText href='/fun_facts' text='FUN FACTS' />
         </Toolbar>
       </Container>
     </AppBar>

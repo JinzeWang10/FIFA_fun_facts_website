@@ -749,7 +749,22 @@ const search_players = async function(req, res) {
       res.json(data);
     }
   });
+
+
+}
+
+const funfacts = async function(req, res) {
   
+  res.json({
+    1:"The top 5 nation with most players are: England(1801), Germany(1274), Spain(1184), Argentina(1074) and France(1007).",
+    2:"Players born in August have the highest rating(65.629), while players born in September have the lowest rating(64.973).",
+    3:"The clubs in the Premier League are most generous, they pay an average wage of 43530 euros to its players.",
+    4:"Manchester city pays an average wage of 141076 euros to its players, which is the most among all clubs.",
+    5:"The prime ages of soccer players are from 26 to 30, players in this age range get the highest salary.",
+    6:"Cerro Largo is a really ambitious club, since it bought the most number of players who have higher rating than the average rating of current players in the club.",
+    7:"SL Benfica spends money wisely, it pays the lowest average wage among all wealthy clubs.",
+    0:"There are 90 soccer players transit from a player to a head coach in the past 8 years.",
+  })
 
 }
 
@@ -775,5 +790,6 @@ module.exports = {
   // top_songs,
   // top_albums,
   // search_songs,
-  search_playerid
+  search_playerid,
+  funfacts
 }
