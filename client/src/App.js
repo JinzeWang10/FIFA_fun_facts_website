@@ -7,9 +7,13 @@ import NavBar from './components/NavBar';
 import HomePage from './pages/HomePage';
 import AlbumsPage from './pages/AlbumsPage';
 // import SongsPage from './pages/SongsPage';
-import AlbumInfoPage from './pages/AlbumInfoPage'
+// import AlbumInfoPage from './pages/AlbumInfoPage'
+import ClubVersionPage from './pages/ClubVersion'
 import PlayersPage from "./pages/SongsPage";
-import FunFactPage from "./pages/FunFactPage";
+import BestTeam from "./pages/BestTeam";
+import BestTeamForm from "./pages/BestTeamForm";
+
+import BestTeamForamVersion from "./pages/BestTeamForamVersion";
 
 // createTheme enables you to customize the look and feel of your app past the default
 // in this case, we only change the color scheme
@@ -33,9 +37,11 @@ export default function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/clubs" element={<AlbumsPage />} />
-          <Route path="/albums/:album_id" element={<AlbumInfoPage />} />
+          <Route path="/clubs/:fifa_version" element={<ClubVersionPage />} />
           <Route path="/player_search" element={<PlayersPage />} />
-          <Route path="/fun_facts" element={<FunFactPage />} />
+          <Route path="/best11" element={<BestTeam />} />
+          <Route path="/best11/:formation/:fifa_version" element={<BestTeamForm />}/>
+          <Route path="/best11/:formation" element={<BestTeamForamVersion />}/>
         </Routes>
       </BrowserRouter>
     </ThemeProvider>

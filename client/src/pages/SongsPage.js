@@ -99,7 +99,7 @@ export default function PlayersPage() {
           <TextField label='Nationality' value={nationality_name} onChange={(e) => setnationality_name(e.target.value)} style={{ width: "100%" }}/>
         </Grid>
         <Grid item xs={12}>
-        <InputLabel id="year-label">Years</InputLabel>
+        <InputLabel id="year-label">Version</InputLabel>
           <Select
             labelId="year-label"
             value={fifa_version}

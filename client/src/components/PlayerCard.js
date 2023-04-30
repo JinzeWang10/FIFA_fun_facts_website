@@ -56,7 +56,7 @@ export default function PlayerCard({ playerId, fifa_version, handleClose }) {
       >
         <h1>{playerData.short_name}</h1>
         <h2>Club Name:&nbsp;
-          <NavLink to={`/clubs/${teamData.team_id}`}>{teamData.team_name}</NavLink>
+          <NavLink to={`/clubs/${teamData.fifa_version}/${teamData.team_id}`}>{teamData.team_name}</NavLink>
         </h2>
         {/* <p>Duration: {formatDuration(songData.duration)}</p>
         <p>Tempo: {songData.tempo} bpm</p>

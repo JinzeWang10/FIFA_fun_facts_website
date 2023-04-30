@@ -551,6 +551,42 @@ const search_clubid = async function(req, res) {
   });
   }
 
+//Route 18: GET /clubs_ver/:fifa_version
+const clubs_ver = async function(req, res) {
+  // const club_id = req.params.club_id;
+  const fifa_version = req.params.fifa_version;
+  // const version = req.query.version ?? 23;
+  connection.query(`
+  select team_id, team_name, CONCAT('https://cdn.sofifa.net/teams/',team_id,'/30.png') as team_photo, fifa_version from Team 
+  where team_url like '%01' and fifa_version = ${fifa_version};  
+  `, (err, data) => {
+    if (err || data.length === 0) {
+      console.log(err);
+      res.json({});
+    } else {
+      res.json(data);
+    }
+  });
+  }
+  // select team_id, team_name, CONCAT('https://cdn.sofifa.net/teams/',team_id,'/30.png') as team_photo from Team 
+  // where team_url like '%01'
+  // group by team_id; 
+//, fifa_version, overall, attack, midfield, defence
+//Route 17: GET /clubs
+const clubs = async function(req, res) {
+  // const club_id = req.params.club_id;
+  // const fifa_version = req.params.fifa_version;
+  // const version = req.query.version ?? 23;
+  connection.query(`select distinct fifa_version from Players;
+  `, (err, data) => {
+    if (err || data.length === 0) {
+      console.log(err);
+      res.json({});
+    } else {
+      res.json(data);
+    }
+  });
+  }
 
 
 // /************************
@@ -601,32 +637,36 @@ const search_clubid = async function(req, res) {
 //   }
 // }
 
-// Route 13: GET /best11/:formation
+// Route 13: GET /best11/:formation/:fifa_version
 const best11 = async function(req, res) {
-  // TODO (TASK 11): return the top albums ordered by aggregate number of plays of all songs on the album (descending), with optional pagination (as in route 7)
-  // Hint: you will need to use a JOIN and aggregation to get the total plays of songs in an album
-  // const formation = req.params.formation ?? '433';
-  // TODO (TASK 8): use the ternary (or nullish) operator to set the pageSize based on the query or default to 10
-  // const pageSize = req.query.page_size ?? 10;
-  // const offset=pageSize*(page-1)
+  
+  const formation = req.params.formation;
+  const version = req.params.fifa_version;
 
+  if (formation == 433) {
 
   connection.query(`
-  with cm as(
+  with cm1 as(
     select * from Players
-    where player_positions LIKE '%CM%'
-    order by overall desc
-    limit 2
+    where player_positions LIKE '%CM%' and fifa_version = ${version}
+    order by overall desc, short_name
+    limit 1
        ),
+    cm2 as(
+    select * from Players
+    where player_positions LIKE '%CM%' and fifa_version = ${version}
+    order by overall desc, short_name
+    limit 1,1
+        ),
     cf as(
     select * from Players
-    where player_positions LIKE '%CF%' or player_positions LIKE '%ST%'
+    where player_positions = 'CF' or player_positions = 'ST' and fifa_version = ${version}
     order by overall desc
     limit 1
        ),
     rm as(
     select * from Players
-    where player_positions LIKE '%RM%'
+    where player_positions = 'RW' and fifa_version = ${version}
     order by overall desc
     limit 1
        ),
@@ -634,59 +674,69 @@ const best11 = async function(req, res) {
     
     lm as (
     select * from Players
-    where player_positions LIKE '%LM%'
+    where player_positions = 'LW' and fifa_version = ${version}
     order by overall desc
     limit 1
        ),
     gk as(
     select * from Players
-    where player_positions LIKE '%GK%'
+    where player_positions LIKE '%GK%' and fifa_version = ${version}
     order by overall desc
     limit 1
        ),
-    cb as(
+    cb1 as(
     select * from Players
-    where player_positions LIKE '%CB%'
-    order by overall desc
-    limit 2
+    where player_positions LIKE '%CB%' and fifa_version = ${version}
+    order by overall desc, short_name
+    limit 1
        ),
+    cb2 as(
+    select * from Players
+    where player_positions LIKE '%CB%' and fifa_version = ${version}
+    order by overall desc, short_name
+    limit 1, 1
+        ),
     rb as(
     select * from Players
-    where player_positions LIKE '%RB%'
+    where player_positions = 'RB' and fifa_version = ${version}
     order by overall desc
     limit 1
        ),
     lb as(
     select * from Players
-    where player_positions LIKE '%LB%'
+    where player_positions = 'LB' and fifa_version = ${version}
     order by overall desc
     limit 1
        ),
     cdm as(
     select * from Players
-    where player_positions LIKE '%CDM%' OR player_positions LIKE '%CAM%'
+    where player_positions = 'CDM' OR player_positions = 'CAM' and fifa_version = ${version}
     order by overall desc
     limit 1
        )
     
     
-    select long_name as Name, 'CM' as Position from cm
+    select short_name as Name, 'CM1' as Position, CONCAT('https://cdn.sofifa.net/players/',left(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',Right(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',fifa_version,'_120.png') as photo from cm1
     union
-    select long_name as Name, 'CF' as Position from cf
+    select short_name as Name, 'CM2' as Position, CONCAT('https://cdn.sofifa.net/players/',left(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',Right(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',fifa_version,'_120.png') as photo from cm2
     union
-    select long_name as Name, 'GK' as Position from gk
+    select short_name as Name, 'CF' as Position, CONCAT('https://cdn.sofifa.net/players/',left(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',Right(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',fifa_version,'_120.png') as photo from cf
     union
-    select long_name as Name, 'CB' as Position from cb
+    select short_name as Name, 'GK' as Position, CONCAT('https://cdn.sofifa.net/players/',left(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',Right(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',fifa_version,'_120.png') as photo from gk
     union
-    select long_name as Name, 'RB' as Position from rb
+    select short_name as Name, 'CB1' as Position, CONCAT('https://cdn.sofifa.net/players/',left(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',Right(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',fifa_version,'_120.png') as photo from cb1
     union
-    select long_name as Name, 'LB' as Position from lb
+    select short_name as Name, 'CB2' as Position, CONCAT('https://cdn.sofifa.net/players/',left(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',Right(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',fifa_version,'_120.png') as photo from cb2
     union
-    select long_name as Name, 'CDM' as Position from cdm
+    select short_name as Name, 'RB' as Position, CONCAT('https://cdn.sofifa.net/players/',left(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',Right(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',fifa_version,'_120.png') as photo from rb
     union
-    select long_name as Name, 'RM' as Position from rm
+    select short_name as Name, 'LB' as Position, CONCAT('https://cdn.sofifa.net/players/',left(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',Right(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',fifa_version,'_120.png') as photo from lb
     union
-    select long_name as Name, 'LM' as Position from lm;
+    select short_name as Name, 'CDM' as Position, CONCAT('https://cdn.sofifa.net/players/',left(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',Right(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',fifa_version,'_120.png') as photo from cdm
+    union
+    select short_name as Name, 'RW' as Position, CONCAT('https://cdn.sofifa.net/players/',left(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',Right(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',fifa_version,'_120.png') as photo from rm
+    union
+    select short_name as Name, 'LW' as Position, CONCAT('https://cdn.sofifa.net/players/',left(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',Right(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',fifa_version,'_120.png') as photo from lm;
   `, (err, data) => {
     if (err || data.length === 0) {
       console.log(err);
@@ -698,11 +748,221 @@ const best11 = async function(req, res) {
 
 }
 
+else if (formation == 452){
+
+  connection.query(`
+  with cm1 as(
+    select * from Players
+    where player_positions LIKE '%CM%' and fifa_version = ${version}
+    order by overall desc, short_name
+    limit 1
+       ),
+    cm2 as(
+    select distinct * from Players
+    where player_positions LIKE '%CM%' and fifa_version = ${version}
+    order by overall desc, short_name
+    limit 1,1
+        ),
+    cf as(
+    select * from Players
+    where player_positions LIKE '%CF%' or player_positions LIKE '%ST%' and fifa_version = ${version}
+    order by overall desc
+    limit 1
+       ),
+    rm as(
+    select * from Players
+    where player_positions LIKE '%RM%' and fifa_version = ${version}
+    order by overall desc
+    limit 1
+       ),
+    lm as (
+    select * from Players
+    where player_positions LIKE '%LM%' and fifa_version = ${version}
+    order by overall desc
+    limit 1
+       ),
+    gk as(
+    select * from Players
+    where player_positions LIKE '%GK%' and fifa_version = ${version}
+    order by overall desc
+    limit 1
+       ),
+    cb1 as(
+    select * from Players
+    where player_positions LIKE '%CB%' and fifa_version = ${version}
+    order by overall desc, short_name
+    limit 1
+       ),
+    cb2 as(
+    select * from Players
+    where player_positions LIKE '%CB%' and fifa_version = ${version}
+    order by overall desc, short_name
+    limit 1, 1
+        ),
+    rb as(
+    select * from Players
+    where player_positions = 'RB' and fifa_version = ${version}
+    order by overall desc
+    limit 1
+       ),
+    lb as(
+    select * from Players
+    where player_positions = 'LB' and fifa_version = ${version}
+    order by overall desc
+    limit 1
+       ),
+    cdm as(
+    select * from Players
+    where player_positions = 'CDM' OR player_positions = 'CAM' and fifa_version = ${version}
+    order by overall desc
+    limit 1
+       )
+    
+    
+    select short_name as Name, 'CM1' as Position, CONCAT('https://cdn.sofifa.net/players/',left(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',Right(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',fifa_version,'_120.png') as photo from cm1
+    union
+    select short_name as Name, 'CM2' as Position, CONCAT('https://cdn.sofifa.net/players/',left(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',Right(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',fifa_version,'_120.png') as photo from cm2
+    union
+    select short_name as Name, 'CF' as Position, CONCAT('https://cdn.sofifa.net/players/',left(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',Right(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',fifa_version,'_120.png') as photo from cf
+    union
+    select short_name as Name, 'GK' as Position, CONCAT('https://cdn.sofifa.net/players/',left(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',Right(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',fifa_version,'_120.png') as photo from gk
+    union
+    select short_name as Name, 'CB1' as Position, CONCAT('https://cdn.sofifa.net/players/',left(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',Right(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',fifa_version,'_120.png') as photo from cb1
+    union
+    select short_name as Name, 'CB2' as Position, CONCAT('https://cdn.sofifa.net/players/',left(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',Right(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',fifa_version,'_120.png') as photo from cb2
+    union
+    select short_name as Name, 'RB' as Position, CONCAT('https://cdn.sofifa.net/players/',left(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',Right(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',fifa_version,'_120.png') as photo from rb
+    union
+    select short_name as Name, 'LB' as Position, CONCAT('https://cdn.sofifa.net/players/',left(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',Right(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',fifa_version,'_120.png') as photo from lb
+    union
+    select short_name as Name, 'CDM' as Position, CONCAT('https://cdn.sofifa.net/players/',left(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',Right(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',fifa_version,'_120.png') as photo from cdm
+    union
+    select short_name as Name, 'RM' as Position, CONCAT('https://cdn.sofifa.net/players/',left(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',Right(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',fifa_version,'_120.png') as photo from rm
+    union
+    select short_name as Name, 'LM' as Position, CONCAT('https://cdn.sofifa.net/players/',left(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',Right(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',fifa_version,'_120.png') as photo from lm;
+  `, (err, data) => {
+    if (err || data.length === 0) {
+      console.log(err);
+      res.json([]);
+    } else {
+      res.json(data);
+    }
+  });
+
+
+}
+
+else if (formation == 442){
+
+  connection.query(`
+  with cm1 as(
+    select * from Players
+    where player_positions LIKE '%CM%' and fifa_version = ${version}
+    order by overall desc, short_name
+    limit 1
+       ),
+    cm2 as(
+    select distinct * from Players
+    where player_positions LIKE '%CM%' and fifa_version = ${version}
+    order by overall desc, short_name
+    limit 1,1
+        ),
+    cf1 as(
+    select * from Players
+    where player_positions LIKE '%CF%' or player_positions LIKE '%ST%' and fifa_version = ${version}
+    order by overall desc, short_name
+    limit 1
+       ),
+    cf2 as(
+    select * from Players
+    where player_positions = 'CF' or player_positions = 'ST' and fifa_version = ${version}
+    order by overall desc, short_name
+    limit 1, 1
+        ),
+    rm as(
+    select * from Players
+    where player_positions = 'RM' and fifa_version = ${version}
+    order by overall desc
+    limit 1
+       ),
+    
+    
+    lm as (
+    select * from Players
+    where player_positions = 'LM' and fifa_version = ${version}
+    order by overall desc
+    limit 1
+       ),
+    gk as(
+    select * from Players
+    where player_positions LIKE '%GK%' and fifa_version = ${version}
+    order by overall desc
+    limit 1
+       ),
+    cb1 as(
+    select * from Players
+    where player_positions LIKE '%CB%' and fifa_version = ${version}
+    order by overall desc, short_name
+    limit 1
+       ),
+    cb2 as(
+    select * from Players
+    where player_positions LIKE '%CB%' and fifa_version = ${version}
+    order by overall desc, short_name
+    limit 1, 1
+        ),
+    rb as(
+    select * from Players
+    where player_positions = 'RB' and fifa_version = ${version}
+    order by overall desc
+    limit 1
+       ),
+    lb as(
+    select * from Players
+    where player_positions = 'LB' and fifa_version = ${version}
+    order by overall desc
+    limit 1
+       )
+    
+    
+    select short_name as Name, 'CM1' as Position, CONCAT('https://cdn.sofifa.net/players/',left(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',Right(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',fifa_version,'_120.png') as photo from cm1
+    union
+    select short_name as Name, 'CM2' as Position, CONCAT('https://cdn.sofifa.net/players/',left(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',Right(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',fifa_version,'_120.png') as photo from cm2
+    union
+    select short_name as Name, 'CF1' as Position, CONCAT('https://cdn.sofifa.net/players/',left(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',Right(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',fifa_version,'_120.png') as photo from cf1
+    union
+    select short_name as Name, 'CF2' as Position, CONCAT('https://cdn.sofifa.net/players/',left(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',Right(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',fifa_version,'_120.png') as photo from cf2
+    union
+    select short_name as Name, 'GK' as Position, CONCAT('https://cdn.sofifa.net/players/',left(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',Right(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',fifa_version,'_120.png') as photo from gk
+    union
+    select short_name as Name, 'CB1' as Position, CONCAT('https://cdn.sofifa.net/players/',left(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',Right(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',fifa_version,'_120.png') as photo from cb1
+    union
+    select short_name as Name, 'CB2' as Position, CONCAT('https://cdn.sofifa.net/players/',left(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',Right(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',fifa_version,'_120.png') as photo from cb2
+    union
+    select short_name as Name, 'RB' as Position, CONCAT('https://cdn.sofifa.net/players/',left(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',Right(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',fifa_version,'_120.png') as photo from rb
+    union
+    select short_name as Name, 'LB' as Position, CONCAT('https://cdn.sofifa.net/players/',left(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',Right(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',fifa_version,'_120.png') as photo from lb
+    union
+    select short_name as Name, 'RM' as Position, CONCAT('https://cdn.sofifa.net/players/',left(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',Right(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',fifa_version,'_120.png') as photo from rm
+    union
+    select short_name as Name, 'LM' as Position, CONCAT('https://cdn.sofifa.net/players/',left(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',Right(LPAD(LEFT(player_id, 6), 6, '0'),3), '/',fifa_version,'_120.png') as photo from lm;
+  `, (err, data) => {
+    if (err || data.length === 0) {
+      console.log(err);
+      res.json([]);
+    } else {
+      res.json(data);
+    }
+  });
+
+}
+
+}
 // Route 9: GET /search_players
 const search_players = async function(req, res) {
   // TODO (TASK 12): return all songs that match the given search query with parameters defaulted to those specified in API spec ordered by title (ascending)
   // Some default parameters have been provided for you, but you will need to fill in the rest
-  const position = req.query.position ?? 'LB';
+  const position = req.query.position ?? '';
   const nationality = req.query.nationality ?? '';
   const pace_low = req.query.pace_low ?? 50;
   const pace_high = req.query.pace_high ?? 99;
@@ -733,7 +993,6 @@ const search_players = async function(req, res) {
       res.json(data);
     }
   });
-
 
 }
 
@@ -766,6 +1025,7 @@ module.exports = {
   best_N_players,
   best_N_clubs,
   best11,
+  funfacts,
   // song,
   // album,
   // albums,
@@ -774,5 +1034,8 @@ module.exports = {
   // top_albums,
   // search_songs,
   search_playerid,
-  funfacts
+  search_clubid,
+  clubs,
+  clubs_ver,
+
 }

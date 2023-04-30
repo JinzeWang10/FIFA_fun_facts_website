@@ -19,12 +19,15 @@ app.get('/worst_team', routes.worst_team);
 app.get('/new_good_players', routes.new_good_players);
 app.get('/spidar_chart', routes.spidar_chart);
 app.get('/best_N_players', routes.best_N_players);
-app.get('/best11/', routes.best11);
+app.get('/best11/:formation/:fifa_version', routes.best11);
 app.get('/player_coach', routes.player_coach);
 app.get('/best_N_players', routes.best_N_players);
 app.get('/best_N_clubs', routes.best_N_clubs);
 app.get('/search_players', routes.search_players);
-app.get('/search_playerid/:player_id', routes.search_playerid);
+app.get('/search_playerid/:player_id/:fifa_version', routes.search_playerid);
+app.get('/search_club/:club_id/:fifa_version', routes.search_clubid);
+app.get('/clubs', routes.clubs)
+app.get('/clubs_ver/:fifa_version', routes.clubs_ver)
 app.get('/funfacts', routes.funfacts);
 
 app.listen(config.server_port, () => {
