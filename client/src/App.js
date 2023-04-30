@@ -1,12 +1,12 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { CssBaseline, ThemeProvider } from '@mui/material'
-import { indigo, amber } from '@mui/material/colors'
+import { amber, green } from '@mui/material/colors'
 import { createTheme } from "@mui/material/styles";
 
 import NavBar from './components/NavBar';
 import HomePage from './pages/HomePage';
 import AlbumsPage from './pages/AlbumsPage';
-import SongsPage from './pages/SongsPage';
+// import SongsPage from './pages/SongsPage';
 import AlbumInfoPage from './pages/AlbumInfoPage'
 import PlayersPage from "./pages/SongsPage";
 import FunFactPage from "./pages/FunFactPage";
@@ -15,7 +15,7 @@ import FunFactPage from "./pages/FunFactPage";
 // in this case, we only change the color scheme
 export const theme = createTheme({
   palette: {
-    primary: indigo,
+    primary: green,
     secondary: amber,
   },
 });

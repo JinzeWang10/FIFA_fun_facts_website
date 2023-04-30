@@ -1,24 +1,38 @@
 import { useEffect, useState } from 'react';
-import { Button, Checkbox, Container, FormControlLabel, Grid, Link, Slider, TextField } from '@mui/material';
+import { Button, Container, Grid, Link, Slider, TextField, InputLabel, MenuItem, Select } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 
-import SongCard from '../components/SongCard';
-import { formatDuration } from '../helpers/formatter';
+import PlayerCard from '../components/PlayerCard';
+// import { formatDuration } from '../helpers/formatter';
 const config = require('../config.json');
 
 export default function PlayersPage() {
   const [pageSize, setPageSize] = useState(10);
   const [data, setData] = useState([]);
   const [selectedplayerId, setSelectedplayerId] = useState(null);
-
+  const [fifa_version, setfifaversion] = useState(23);
   const [position, setposition] = useState('');
-  const [defending, setdefending] = useState([60, 660]);
-  const [dribbling, setdribbling] = useState([0, 1100000000]);
-  const [pace, setPace] = useState([30, 99]);
-  const [shooting, setshooting] = useState([0, 1]);
-  const [passing, setpassing] = useState([0, 1]);
+  const [defending, setdefending] = useState([0, 100]);
+  const [dribbling, setdribbling] = useState([0, 100]);
+  const [pace, setPace] = useState([0, 100]);
+  const [shooting, setshooting] = useState([0, 100]);
+  const [passing, setpassing] = useState([0, 100]);
   const [nationality_name, setnationality_name] = useState('');
+  // const [selectedYear, setSelectedYear] = useState('');
 
+// define options for dropdown
+  const yearOptions = [
+    { label: 'Select year', value: '' },
+    { label: '15', value: 15 },
+    { label: '16', value: 16 },
+    { label: '17', value: 17 },
+    { label: '18', value: 18 },
+    { label: '19', value: 19 },
+    { label: '20', value: 20 },
+    { label: '21', value: 21 },
+    { label: '22', value: 22 },
+    { label: '23', value: 23 },
+  ];
   useEffect(() => {
     fetch(`http://${config.server_host}:${config.server_port}/search_players`)
       .then(res => res.json())
@@ -35,7 +49,8 @@ export default function PlayersPage() {
       `&pace_low=${pace[0]}&pace_high=${pace[1]}` +
       `&shooting_low=${shooting[0]}&shooting_high=${shooting[1]}` +
       `&passing_low=${passing[0]}&passing_high=${passing[1]}` +
-      `&nationality=${nationality_name}`
+      `&nationality=${nationality_name}` +
+      `&fifa_version=${fifa_version}`
     )
       .then(res => res.json())
       .then(resJson => {
@@ -65,9 +80,16 @@ export default function PlayersPage() {
 
   ]
 
+  // This component makes uses of the Grid component from MUI (https://mui.com/material-ui/react-grid/).
+  // The Grid component is super simple way to create a page layout. Simply make a <Grid container> tag
+  // (optionally has spacing prop that specifies the distance between grid items). Then, enclose whatever
+  // component you want in a <Grid item xs={}> tag where xs is a number between 1 and 12. Each row of the
+  // grid is 12 units wide and the xs attribute specifies how many units the grid item is. So if you want
+  // two grid items of the same size on the same row, define two grid items with xs={6}. The Grid container
+  // will automatically lay out all the grid items into rows based on their xs values.
   return (
     <Container>
-      {selectedplayerId && <playerCard playerId={selectedplayerId} handleClose={() => setSelectedplayerId(null)} />}
+      {selectedplayerId && <PlayerCard playerId={selectedplayerId} fifa_version={fifa_version} handleClose={() => setSelectedplayerId(null)} />}
       <h2>Search Players</h2>
       <Grid container spacing={6}>
         <Grid item xs={6}>
@@ -76,6 +98,21 @@ export default function PlayersPage() {
         <Grid item xs={6}>
           <TextField label='Nationality' value={nationality_name} onChange={(e) => setnationality_name(e.target.value)} style={{ width: "100%" }}/>
         </Grid>
+        <Grid item xs={12}>
+        <InputLabel id="year-label">Years</InputLabel>
+          <Select
+            labelId="year-label"
+            value={fifa_version}
+            onChange={(e) => setfifaversion(e.target.value)}
+            fullWidth
+          >
+            {yearOptions.map((option) => (
+              <MenuItem key={option.value} value={option.value}>
+                {option.label}
+              </MenuItem>
+            ))}
+          </Select>
+        </Grid>
         <Grid item xs={4}>
           <p>defending</p>
           <Slider
@@ -83,7 +120,7 @@ export default function PlayersPage() {
             min={30}
             max={99}
             step={1}
-            onChange={(e, newValue) => setdefending(newValue)}
+            onChange={(e) => setdefending(e.target.value)}
             valueLabelDisplay='auto'
           />
         </Grid>
@@ -94,7 +131,7 @@ export default function PlayersPage() {
             min={30}
             max={99}
             step={1}
-            onChange={(e, newValue) => setdribbling(newValue)}
+            onChange={(e) => setdribbling(e.target.value)}
             valueLabelDisplay='auto'
             
           />
@@ -108,7 +145,7 @@ export default function PlayersPage() {
             min={30}
             max={99}
             step={1}
-            onChange={(e, newValue) => setPace(newValue)}
+            onChange={(e) => setPace(e.target.value)}
             valueLabelDisplay='auto'
           />
         </Grid>
@@ -119,7 +156,7 @@ export default function PlayersPage() {
             min={30}
             max={99}
             step={1}
-            onChange={(e, newValue) => setshooting(newValue)}
+            onChange={(e) => setshooting(e.target.value)}
             valueLabelDisplay='auto'
           />
         </Grid>
@@ -130,7 +167,7 @@ export default function PlayersPage() {
             min={30}
             max={99}
             step={1}
-            onChange={(e, newValue) => setpassing(newValue)}
+            onChange={(e) => setpassing(e.target.value)}
             valueLabelDisplay='auto'
           />
         </Grid>
@@ -151,3 +188,4 @@ export default function PlayersPage() {
     </Container>
   );
 }
+

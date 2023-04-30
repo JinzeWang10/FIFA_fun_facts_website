@@ -28,6 +28,7 @@ const league_wage = async function(req, res) {
       )
       SELECT DISTINCT t.league_name as League, a.avg_wage as "Average_Wage" from avg_pay a
       join Team t on t.league_id = a.club_league_id
+      where team_url like '%01'
       ORDER BY a.avg_wage DESC;
   `, (err, data) => {
     if (err || data.length === 0) {
@@ -53,6 +54,7 @@ const club_wage = async function(req, res) {
   SELECT distinct t.team_name as Team, t.league_name as League, a.avg_wage as
   "Average Wage" from avg_pay a
   join Team t on t.team_id = a.club_team_id
+  where where team_url like '%01'
   ORDER BY a.avg_wage DESC;`, (err, data) => {
   if (err || data.length === 0) {
     // if there is an error for some reason, or if the query is empty (this should not be possible)
@@ -83,6 +85,7 @@ const club_wise = async function(req, res) {
     
     SELECT t.team_name as Team, t.league_name as League, avg_wage as 'Average_Wage' from range_skill a
     join Team t on t.team_id = a.club_team_id
+    where t.team_url like '%01'
     ORDER BY a.avg_wage ASC;
   `, (err, data) => {
     if (err || data.length === 0) {
@@ -125,6 +128,7 @@ const player_coach = async function(req, res) {
   connection.query(`
   Select distinct p.long_name as Name, p.club_name as 'Club Played', t.team_name as 'Club/Country Coaching' from Players p join Coaches c on c.long_name=p.long_name and c.dob = p.dob
   join Team t on t.coach_id = c.coach_id
+  where t.team_url like '%01'
   order by p.long_name;
   `, (err, data) => {
     if (err || data.length === 0) {
@@ -206,6 +210,7 @@ const worst_team = async function(req, res) {
   (
   SELECT team_id,team_name,fifa_version,coach_id,captain,penalties,overall
   FROM Team
+  where team_url like '%01'
   GROUP BY fifa_version,team_id
   ),
   Team_with_US_Coach AS
@@ -289,6 +294,7 @@ const new_good_players = async function(req, res) {
   Cn.club_team_id,T.team_name,Cn.player_id,Cn.fifa_version,Cn.overall as
   player_overall, T.overall as team_overall FROM Club_newPlayer Cn
   LEFT JOIN Team T ON T.team_id=Cn.club_team_id
+  where T.team_url like '%01'
   )
   SELECT team_name,COUNT(player_id) as good_player_num FROM Club_overall
   WHERE player_overall>team_overall
@@ -461,48 +467,6 @@ const spidar_chart = async function(req, res) {
   });
 }
 
-const top_players = async function(req, res) {
-  const page = req.query.page;
-  // TODO (TASK 8): use the ternary (or nullish) operator to set the pageSize based on the query or default to 10
-  const pageSize = req.query.page_size ?? 5;
-  const offset=pageSize*(page-1);
-  // console.log(page);
-  // console.log(pageSize);
-  // console.log(offset);
-
-  if (!page) {
-    connection.query(`
-      SELECT player_id, long_name, player_positions, overall, age, club_name
-      FROM Players
-      where fifa_version=23
-      ORDER BY overall DESC 
-    `, (err, data) => {
-      if (err || data.length === 0) {
-        console.log(err);
-        res.json({});
-      } else {
-        res.json(data);
-      }
-    });
-  } else {
-    // TODO (TASK 10): reimplement TASK 9 with pagination
-    // Hint: use LIMIT and OFFSET (see https://www.w3schools.com/php/php_mysql_select_limit.asp)
-    connection.query(`
-      SELECT long_name, player_positions, overall, age, club_name
-      FROM Players
-      where fifa_version=23
-      ORDER BY overall DESC 
-      LIMIT ${pageSize} OFFSET ${offset};
-    `, (err, data) => {
-      if (err || data.length === 0) {
-        console.log(err);
-        res.json([]);
-      } else {
-        res.json(data);
-      }
-    });
-  }
-}
 
 // Route 11: GET /best_N_players
 const best_N_players = async function(req, res) {
@@ -530,7 +494,7 @@ const best_N_clubs = async function(req, res) {
 const N = req.query.N ?? 10;
 // const version = req.query.version ?? 23;
 connection.query(`
-Select * from Team where league_id != 78 order by overall DESC
+Select * from Team where league_id != 78 and team_url like '%01' order by overall DESC
 limit ${N}
   ;  
 `, (err, data) => {
@@ -550,14 +514,15 @@ limit ${N}
 
 
 
-//Route 14 GET /search_playerid/:player_id
+//Route 14 GET /search_playerid/:player_id/:fifa_version
 const search_playerid = async function(req, res) {
   const player_id = req.params.player_id;
+  const fifa_version = req.params.fifa_version;
   // const version = req.query.version ?? 23;
   connection.query(`
-  select short_name, fifa_version, pace, passing, dribbling, shooting, defending, 
+  select club_team_id, short_name, fifa_version, pace, passing, dribbling, shooting, defending, 
   physic from Players 
-  where player_id = ${player_id};  
+  where player_id = ${player_id} and fifa_version = ${fifa_version};  
   `, (err, data) => {
     if (err || data.length === 0) {
       console.log(err);
@@ -567,6 +532,26 @@ const search_playerid = async function(req, res) {
     }
   });
   }
+
+//Route 17: GET /search_club/:club_id/:fifa_version
+const search_clubid = async function(req, res) {
+  const club_id = req.params.club_id;
+  const fifa_version = req.params.fifa_version;
+  // const version = req.query.version ?? 23;
+  connection.query(`
+  select team_id, team_name, fifa_version, overall, attack, midfield, defence from Team 
+  where team_id = ${club_id} and team_url like '%01' and fifa_version = ${fifa_version};  
+  `, (err, data) => {
+    if (err || data.length === 0) {
+      console.log(err);
+      res.json({});
+    } else {
+      res.json(data);
+    }
+  });
+  }
+
+
 
 // /************************
 //  * ADVANCED INFO ROUTES *
@@ -717,30 +702,29 @@ const best11 = async function(req, res) {
 const search_players = async function(req, res) {
   // TODO (TASK 12): return all songs that match the given search query with parameters defaulted to those specified in API spec ordered by title (ascending)
   // Some default parameters have been provided for you, but you will need to fill in the rest
-  const position = req.query.position ?? 'ST';
-  const nationality = req.query.nationality ?? 'England';
-  const pace_low = req.query.pace_low ?? 30;
+  const position = req.query.position ?? 'LB';
+  const nationality = req.query.nationality ?? '';
+  const pace_low = req.query.pace_low ?? 50;
   const pace_high = req.query.pace_high ?? 99;
-  const dribbling_low = req.query.dribbling_low ?? 30;
+  const dribbling_low = req.query.dribbling_low ?? 50;
   const dribbling_high = req.query.dribbling_high ?? 99;
-  const shooting_low = req.query.shooting_low ?? 30;
+  const shooting_low = req.query.shooting_low ?? 50;
   const shooting_high = req.query.shooting_high ?? 99;
-  const passing_low = req.query.passing_low ?? 30;
+  const passing_low = req.query.passing_low ?? 50;
   const passing_high = req.query.passing_high ?? 99;
-  const defending_low = req.query.defending_low ?? 30;
+  const defending_low = req.query.defending_low ?? 50;
   const defending_high = req.query.defending_high ?? 99;
-  const version = req.query.version ?? 23;
+  const fifa_version = req.query.fifa_version ?? 23;
 
-  // console.log(position)
+  // console.log(title)
   connection.query(`
     select * from Players where player_positions like '%${position}%'
-    and nationality_name = '${nationality}' and pace between ${pace_low} and ${pace_high} and
+    and nationality_name like '${nationality}%' and pace between ${pace_low} and ${pace_high} and
     dribbling between ${dribbling_low} and ${dribbling_high} and
     shooting between ${shooting_low} and ${shooting_high} and
     passing between ${passing_low} and ${passing_high} and
     defending between ${defending_low} and ${defending_high} and
-    fifa_version = ${version}
-    order by overall desc;
+    fifa_version = '${fifa_version}';
   `, (err, data) => {
     if (err || data.length === 0) {
       console.log(err);
@@ -782,7 +766,6 @@ module.exports = {
   best_N_players,
   best_N_clubs,
   best11,
-  top_players,
   // song,
   // album,
   // albums,

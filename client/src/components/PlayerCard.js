@@ -1,18 +1,18 @@
 import { useEffect, useState } from 'react';
-import { Box, Button, ButtonGroup, Link, Modal } from '@mui/material';
+import { Box, Button, ButtonGroup, Modal } from '@mui/material';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
 import { NavLink } from 'react-router-dom';
 
-import { formatDuration } from '../helpers/formatter';
+// import { formatDuration } from '../helpers/formatter';
 const config = require('../config.json');
 
 // SongCard is a modal (a common example of a modal is a dialog window).
 // Typically, modals will conditionally appear (specified by the Modal's open property)
 // but in our implementation whether the Modal is open is handled by the parent component
 // (see HomePage.js for example), since it depends on the state (selectedSongId) of the parent
-export default function SongCard({ songId, handleClose }) {
-  const [songData, setSongData] = useState({});
-  const [albumData, setAlbumData] = useState({});
+export default function PlayerCard({ playerId, fifa_version, handleClose }) {
+  const [playerData, setPlayerData] = useState({});
+  const [teamData, setTeamData] = useState({});
 
   const [barRadar, setBarRadar] = useState(true);
 
@@ -21,20 +21,23 @@ export default function SongCard({ songId, handleClose }) {
   // Hint: since the second fetch depends on the information from the first, try nesting the second fetch within the then block of the first (pseudocode is provided)
   useEffect(() => {
     // Hint: here is some pseudocode to guide you
-    fetch(`http://${config.server_host}:${config.server_port}/song/${songId}`)
+    fetch(`http://${config.server_host}:${config.server_port}/search_playerid/${playerId}/${fifa_version}`)
       .then(res => res.json())
       .then(resJson => {
-        setSongData(resJson)
-        fetch(`http://${config.server_host}:${config.server_port}/album/${songData.album_id}`)
+        setPlayerData(resJson[0])
+        const clubTeamId = parseInt(resJson[0].club_team_id);
+        fetch(`http://${config.server_host}:${config.server_port}/search_club/${clubTeamId}/${fifa_version}`)
           .then(res => res.json())
-          .then(resJson => setAlbumData(resJson))
+          .then(resJson => setTeamData(resJson[0]))
         })
-  }, [songId]);
+  }, [playerId, fifa_version]);
 
   const chartData = [
-    { name: 'Danceability', value: songData.danceability },
-    { name: 'Energy', value: songData.energy },
-    { name: 'Valence', value: songData.valence },
+    { name: 'Pace', value: playerData.pace },
+    { name: 'Passing', value: playerData.passing },
+    { name: 'Dribbling', value: playerData.dribbling },
+    { name: 'Shooting', value: playerData.shooting },
+    { name: 'Defending', value: playerData.defending },
   ];
 
   const handleGraphChange = () => {
@@ -51,13 +54,13 @@ export default function SongCard({ songId, handleClose }) {
         p={3}
         style={{ background: 'white', borderRadius: '16px', border: '2px solid #000', width: 600 }}
       >
-        <h1>{songData.title}</h1>
-        <h2>Album:&nbsp;
-          <NavLink to={`/albums/${albumData.album_id}`}>{albumData.title}</NavLink>
+        <h1>{playerData.short_name}</h1>
+        <h2>Club Name:&nbsp;
+          <NavLink to={`/clubs/${teamData.team_id}`}>{teamData.team_name}</NavLink>
         </h2>
-        <p>Duration: {formatDuration(songData.duration)}</p>
+        {/* <p>Duration: {formatDuration(songData.duration)}</p>
         <p>Tempo: {songData.tempo} bpm</p>
-        <p>Key: {songData.key_mode}</p>
+        <p>Key: {songData.key_mode}</p> */}
         <ButtonGroup>
           <Button disabled={barRadar} onClick={handleGraphChange}>Bar</Button>
           <Button disabled={!barRadar} onClick={handleGraphChange}>Radar</Button>
@@ -72,7 +75,7 @@ export default function SongCard({ songId, handleClose }) {
                     layout='vertical'
                     margin={{ left: 40 }}
                   >
-                    <XAxis type='number' domain={[0, 1]} />
+                    <XAxis type='number' domain={[0, 100]} />
                     <YAxis type='category' dataKey='name' />
                     <Bar dataKey='value' stroke='#8884d8' fill='#8884d8' />
                   </BarChart>
@@ -82,7 +85,7 @@ export default function SongCard({ songId, handleClose }) {
                   <RadarChart outerRadius={90} width={730} height={250} data={chartData}>
                   <PolarGrid />
                   <PolarAngleAxis dataKey="name" />
-                  <PolarRadiusAxis angle={90} domain={[0, 1]} />
+                  <PolarRadiusAxis angle={90} domain={[0, 100]} />
                   <Radar dataKey="value" stroke="#8884d8" fill="#8884d8" fillOpacity={0.6} />
                   </RadarChart>
                   {/* TODO (TASK 21): display the same data as the bar chart using a radar chart */}
