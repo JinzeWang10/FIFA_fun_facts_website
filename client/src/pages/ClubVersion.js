@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Box, Container } from '@mui/material';
+import { Box, Container,Link } from '@mui/material';
 import { NavLink } from 'react-router-dom';
+import PlayerCard from '../components/PlayerCard';
 
 const config = require('../config.json');
 
 export default function ClubVersionPage() {
   const { fifa_version } = useParams();
   const [clubs_ver, setClubsVer] = useState([]);
+  const [selectedplayerId, setSelectedplayerId] = useState(null);
 
   useEffect(() => {
     fetch(`http://${config.server_host}:${config.server_port}/clubs_ver/${fifa_version}`)
@@ -19,7 +21,7 @@ export default function ClubVersionPage() {
   // be displayed side-by-side and wrap to the next line when the screen is too narrow. Flexboxes are
   // incredibly powerful. You can learn more on MDN web docs linked below (or many other online resources)
   // https://developer.mozilla.org/en-US/docs/Learn/CSS/CSS_layout/Flexbox
-  const flexFormat = { display: 'flex', flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-evenly' };
+  const flexFormat = { display: 'flex', flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-evenly'};
 
   return (
     // TODO (TASK 22): replace the empty object {} in the Container's style property with flexFormat. Observe the change to the Albums page.

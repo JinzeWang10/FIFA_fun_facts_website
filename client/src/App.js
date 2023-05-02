@@ -9,6 +9,7 @@ import AlbumsPage from './pages/AlbumsPage';
 // import SongsPage from './pages/SongsPage';
 // import AlbumInfoPage from './pages/AlbumInfoPage'
 import ClubVersionPage from './pages/ClubVersion'
+import ClubInfonPage from './pages/ClubPlayerPage'
 import PlayersPage from "./pages/SongsPage";
 import BestTeam from "./pages/BestTeam";
 import BestTeamForm from "./pages/BestTeamForm";
@@ -38,6 +39,7 @@ export default function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/clubs" element={<AlbumsPage />} />
           <Route path="/clubs/:fifa_version" element={<ClubVersionPage />} />
+          <Route path="/clubs/:fifa_version/:team_id" element={<ClubInfonPage />} />
           <Route path="/player_search" element={<PlayersPage />} />
           <Route path="/best11" element={<BestTeam />} />
           <Route path="/best11/:formation/:fifa_version" element={<BestTeamForm />}/>

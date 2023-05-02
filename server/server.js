@@ -24,6 +24,7 @@ app.get('/player_coach', routes.player_coach);
 app.get('/best_N_players', routes.best_N_players);
 app.get('/best_N_clubs', routes.best_N_clubs);
 app.get('/search_players', routes.search_players);
+app.get('/search_players/:fifa_version/:team_id', routes.search_players);
 app.get('/search_playerid/:player_id/:fifa_version', routes.search_playerid);
 app.get('/search_club/:club_id/:fifa_version', routes.search_clubid);
 app.get('/clubs', routes.clubs)

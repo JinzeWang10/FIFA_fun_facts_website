@@ -67,7 +67,8 @@ export default function PlayersPage() {
   // instead of loading only the data we need (which is necessary in order to be able to sort by column)
   const columns = [
     { field: 'long_name', headerName: 'Name', width: 200, renderCell: (params) => (
-        <Link onClick={() => setSelectedplayerId(params.row.player_id)}>{params.value}</Link>
+        <Link onClick={() => setSelectedplayerId(params.row.player_id)}>{params.row.short_name}</Link>
+        // <Link onClick={() => setSelectedplayerId(params.row.player_id)}>nihao</Link>
     ) },
     // { field: 'position', headerName: 'Position' },
     { field: 'nationality_name', headerName: 'Nationality' },
@@ -117,7 +118,7 @@ export default function PlayersPage() {
           <p>defending</p>
           <Slider
             value={defending}
-            min={30}
+            min={20}
             max={99}
             step={1}
             onChange={(e) => setdefending(e.target.value)}
@@ -128,7 +129,7 @@ export default function PlayersPage() {
           <p>dribbling</p>
           <Slider
             value={dribbling}
-            min={30}
+            min={20}
             max={99}
             step={1}
             onChange={(e) => setdribbling(e.target.value)}
@@ -142,7 +143,7 @@ export default function PlayersPage() {
           <p>pace</p>
           <Slider
             value={pace}
-            min={30}
+            min={20}
             max={99}
             step={1}
             onChange={(e) => setPace(e.target.value)}
@@ -153,7 +154,7 @@ export default function PlayersPage() {
           <p>shooting</p>
           <Slider
             value={shooting}
-            min={30}
+            min={20}
             max={99}
             step={1}
             onChange={(e) => setshooting(e.target.value)}
@@ -164,7 +165,7 @@ export default function PlayersPage() {
           <p>passing</p>
           <Slider
             value={passing}
-            min={30}
+            min={20}
             max={99}
             step={1}
             onChange={(e) => setpassing(e.target.value)}

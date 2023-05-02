@@ -964,20 +964,22 @@ const search_players = async function(req, res) {
   // Some default parameters have been provided for you, but you will need to fill in the rest
   const position = req.query.position ?? '';
   const nationality = req.query.nationality ?? '';
-  const pace_low = req.query.pace_low ?? 50;
+  const pace_low = req.query.pace_low ?? 20;
   const pace_high = req.query.pace_high ?? 99;
-  const dribbling_low = req.query.dribbling_low ?? 50;
+  const dribbling_low = req.query.dribbling_low ?? 20;
   const dribbling_high = req.query.dribbling_high ?? 99;
-  const shooting_low = req.query.shooting_low ?? 50;
+  const shooting_low = req.query.shooting_low ?? 20;
   const shooting_high = req.query.shooting_high ?? 99;
-  const passing_low = req.query.passing_low ?? 50;
+  const passing_low = req.query.passing_low ?? 20;
   const passing_high = req.query.passing_high ?? 99;
-  const defending_low = req.query.defending_low ?? 50;
+  const defending_low = req.query.defending_low ?? 20;
   const defending_high = req.query.defending_high ?? 99;
   const fifa_version = req.query.fifa_version ?? 23;
+  const club_id = req.params.team_id;
 
   // console.log(title)
-  connection.query(`
+  if (!club_id) {
+    connection.query(`
     select * from Players where player_positions like '%${position}%'
     and nationality_name like '${nationality}%' and pace between ${pace_low} and ${pace_high} and
     dribbling between ${dribbling_low} and ${dribbling_high} and
@@ -985,14 +987,34 @@ const search_players = async function(req, res) {
     passing between ${passing_low} and ${passing_high} and
     defending between ${defending_low} and ${defending_high} and
     fifa_version = '${fifa_version}';
-  `, (err, data) => {
+    `, (err, data) => {
     if (err || data.length === 0) {
       console.log(err);
       res.json({});
     } else {
       res.json(data);
     }
-  });
+    });
+  } else {
+
+    connection.query(`
+    select * from Players where player_positions like '%${position}%'
+    and nationality_name like '${nationality}%' and pace between ${pace_low} and ${pace_high} and
+    dribbling between ${dribbling_low} and ${dribbling_high} and
+    shooting between ${shooting_low} and ${shooting_high} and
+    passing between ${passing_low} and ${passing_high} and
+    defending between ${defending_low} and ${defending_high} and
+    fifa_version = '${fifa_version}' and club_team_id=${club_id};
+    `, (err, data) => {
+    if (err || data.length === 0) {
+      console.log(err);
+      res.json({});
+    } else {
+      res.json(data);
+    }
+    });
+  }
+  
 
 }
 
